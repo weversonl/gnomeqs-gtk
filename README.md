@@ -182,7 +182,23 @@ flatpak run io.github.weversonl.GnomeQS
 
 ### Arch Linux / PKGBUILD
 
-Build the package locally:
+GnomeQS is available on the AUR as `gnome-quick-share`.
+
+Install it with `yay`:
+
+```bash
+yay -S gnome-quick-share
+```
+
+Or by cloning the AUR package and building it manually:
+
+```bash
+git clone https://aur.archlinux.org/gnome-quick-share.git
+cd gnome-quick-share
+makepkg -si
+```
+
+To build the package locally from this repository:
 
 ```bash
 cd aur

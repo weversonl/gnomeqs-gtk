@@ -14,7 +14,6 @@ BuildRequires:  gtk4-devel
 BuildRequires:  libadwaita-devel
 BuildRequires:  gtk3-devel
 BuildRequires:  libayatana-appindicator-devel
-BuildRequires:  openssl-devel
 BuildRequires:  dbus-devel
 
 Requires:       gtk4
@@ -22,8 +21,6 @@ Requires:       libadwaita
 Requires:       gtk3
 Requires:       libayatana-appindicator
 Requires:       dbus
-Requires:       openssl
-
 %description
 GnomeQS is a GTK4 and Libadwaita desktop client for nearby file sharing.
 

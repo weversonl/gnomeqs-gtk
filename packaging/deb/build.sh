@@ -47,7 +47,7 @@ Section: utils
 Priority: optional
 Architecture: $arch
 Maintainer: weversonl
-Depends: libgtk-4-1, libadwaita-1-0, libgtk-3-0, libayatana-appindicator3-1, libdbus-1-3, libssl3, libglib2.0-bin
+Depends: libgtk-4-1, libadwaita-1-0, libgtk-3-0, libayatana-appindicator3-1, libdbus-1-3, libglib2.0-bin
 Description: GnomeQS - QuickShare client for GNOME
  GTK4 and Libadwaita desktop client for nearby file sharing.
 EOF
