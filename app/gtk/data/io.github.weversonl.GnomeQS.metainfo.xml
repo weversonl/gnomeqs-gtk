@@ -16,8 +16,8 @@
   <developer id="io.github.weversonl">
     <name>weversonl</name>
   </developer>
-  <url type="homepage">https://github.com/weversonl/gnomeqs-gtk</url>
-  <url type="bugtracker">https://github.com/weversonl/gnomeqs-gtk/issues</url>
+  <url type="homepage">https://github.com/weversonl/gnome-quick-share</url>
+  <url type="bugtracker">https://github.com/weversonl/gnome-quick-share/issues</url>
   <content_rating type="oars-1.1"/>
   <provides>
     <binary>gnomeqs</binary>

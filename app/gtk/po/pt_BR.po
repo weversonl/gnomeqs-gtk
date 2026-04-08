@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: GnomeQS 0.12.0\n"
-"Report-Msgid-Bugs-To: https://github.com/weversonl/gnomeqs-gtk/issues\n"
+"Report-Msgid-Bugs-To: https://github.com/weversonl/gnome-quick-share/issues\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"

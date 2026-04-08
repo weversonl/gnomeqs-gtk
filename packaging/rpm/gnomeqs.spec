@@ -3,7 +3,7 @@ Version:        %{?version_override}%{!?version_override:0.12.0}
 Release:        1%{?dist}
 Summary:        Quick Share client for GNOME
 License:        AGPL-3.0-only
-URL:            https://github.com/weversonl/gnomeqs-gtk
+URL:            https://github.com/weversonl/gnome-quick-share
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cargo
