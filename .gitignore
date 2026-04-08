@@ -14,3 +14,4 @@ aur/*.pkg.tar.zst
 aur/*.pkg.tar.zst.sig
 aur/*.tar.gz
 aur/gnomeqs
+aur/gnome-quick-share
