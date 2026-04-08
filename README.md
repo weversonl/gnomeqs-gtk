@@ -179,12 +179,13 @@ Output:
 Install locally:
 
 ```bash
-sudo dpkg -i packaging/out/deb/*.deb
+sudo apt install ./packaging/out/deb/*.deb
 ```
 
-If dependency resolution is needed afterward:
+If you prefer `dpkg`, you may need an extra dependency resolution step afterward:
 
 ```bash
+sudo dpkg -i packaging/out/deb/*.deb
 sudo apt-get install -f
 ```
 
@@ -193,10 +194,11 @@ Typical extra local tooling on Debian-based systems:
 - `dpkg-dev`
 - `gettext`
 - Rust toolchain
-- GTK4 development packages
-- libadwaita development packages
-- GTK3 development packages
-- Ayatana AppIndicator development packages
+- GTK4 development packages / libraries
+- libadwaita development packages / libraries
+- GTK3 development packages / libraries
+- Ayatana AppIndicator development packages / libraries
+- `glib2`
 
 ### Fedora / RHEL / Other RPM-Based Systems
 
@@ -210,13 +212,7 @@ Output:
 
 - `packaging/out/rpm/rpmbuild/RPMS/**/*.rpm`
 
-Install locally:
-
-```bash
-sudo rpm -ivh packaging/out/rpm/rpmbuild/RPMS/*/*.rpm
-```
-
-Or with `dnf`:
+Install locally with dependency resolution:
 
 ```bash
 sudo dnf install packaging/out/rpm/rpmbuild/RPMS/*/*.rpm
@@ -227,10 +223,11 @@ Typical extra local tooling on RPM-based systems:
 - `rpm-build`
 - `gettext`
 - Rust toolchain
-- GTK4 development packages
-- libadwaita development packages
-- GTK3 development packages
-- Ayatana AppIndicator development packages
+- GTK4 development packages / libraries
+- libadwaita development packages / libraries
+- GTK3 development packages / libraries
+- Ayatana AppIndicator development packages / libraries
+- `glib2`
 
 ## Notes
 
