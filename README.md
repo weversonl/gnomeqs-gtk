@@ -66,6 +66,31 @@ Before using or packaging the application, keep these limits in mind:
 
 In short: this project is designed to feel right on GNOME first, and broad desktop portability is a secondary concern.
 
+## Firewall Notice
+
+If your system uses a firewall, you should strongly consider using a fixed listening port instead of a random one.
+
+Why this matters:
+
+- GnomeQS needs inbound local network connectivity to receive transfers
+- if the listening port changes constantly, firewall rules become harder to manage
+- a fixed port makes it much easier to create a permanent allow rule
+
+Recommended approach:
+
+- choose a fixed port in the application settings
+- allow that port in your firewall
+- make sure the rule applies to your local network profile
+
+Examples of what to check:
+
+- `ufw`
+- `firewalld`
+- raw `iptables` / `nftables`
+- router or host-level filtering in stricter network setups
+
+If discovery works but transfers do not start, firewall rules are one of the first things to verify.
+
 ## Local Development Requirements
 
 You need a Linux system with the Rust toolchain and GNOME-related development packages.
