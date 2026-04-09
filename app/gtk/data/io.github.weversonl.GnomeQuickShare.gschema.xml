@@ -38,6 +38,11 @@
       <summary>TCP port (0 = OS-assigned)</summary>
     </key>
 
+    <key name="wifi-direct-enabled" type="b">
+      <default>false</default>
+      <summary>Enable experimental Wi-Fi Direct integration</summary>
+    </key>
+
     <!-- Appearance -->
     <key name="color-scheme" type="s">
       <default>'system'</default>

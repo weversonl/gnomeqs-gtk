@@ -12,6 +12,7 @@ use crate::tr;
 use crate::config::VERSION;
 use crate::ui::cursor::set_pointer_cursor;
 use crate::ui::window::apply_custom_css;
+use gnomeqs_core::{WifiDirectStatus, detect_wifi_direct_capability};
 
 pub fn build_settings_window(
     parent: &impl gtk4::prelude::IsA<gtk4::Window>,
@@ -283,6 +284,22 @@ fn build_network_group(win: &libadwaita::PreferencesDialog) -> libadwaita::Prefe
     }
 
     group.add(&port_row);
+
+    let wifi_direct = detect_wifi_direct_capability();
+    let wifi_row = libadwaita::SwitchRow::new();
+    wifi_row.set_title(&tr!("Wi-Fi Direct (experimental)"));
+    wifi_row.set_subtitle(&wifi_direct_subtitle(&wifi_direct));
+    wifi_row.set_active(gsettings.boolean("wifi-direct-enabled") && wifi_direct.available);
+    wifi_row.set_sensitive(wifi_direct.available);
+
+    if wifi_direct.available {
+        set_pointer_cursor(&wifi_row);
+        gsettings.bind("wifi-direct-enabled", &wifi_row, "active").build();
+    } else {
+        let _ = gsettings.set_boolean("wifi-direct-enabled", false);
+    }
+
+    group.add(&wifi_row);
     group
 }
 
@@ -306,6 +323,35 @@ fn build_about_page() -> libadwaita::PreferencesPage {
 
 fn settings() -> gio::Settings {
     crate::settings::settings()
+}
+
+fn wifi_direct_subtitle(capability: &gnomeqs_core::WifiDirectCapability) -> String {
+    match capability.status {
+        WifiDirectStatus::BackendMissing => {
+            tr!("Your device is not compatible with Wi-Fi Direct via NetworkManager.")
+        }
+        WifiDirectStatus::BackendNotRunning => {
+            tr!("Your device is not compatible with Wi-Fi Direct right now because NetworkManager is not running.")
+        }
+        WifiDirectStatus::BackendQueryFailed => {
+            tr!("Your device compatibility with Wi-Fi Direct could not be verified right now.")
+        }
+        WifiDirectStatus::NoWifiInterface => {
+            tr!("Your device is not compatible with Wi-Fi Direct because no Wi-Fi interface was detected.")
+        }
+        WifiDirectStatus::WifiInterfaceUnavailable => {
+            tr!("Your device is not compatible with Wi-Fi Direct right now because the Wi-Fi interface is unavailable.")
+        }
+        WifiDirectStatus::NoP2pInterface => {
+            tr!("Your device is not compatible with Wi-Fi Direct because no P2P interface was detected.")
+        }
+        WifiDirectStatus::P2pInterfaceUnavailable => {
+            tr!("Your device is compatible with Wi-Fi Direct through NetworkManager.")
+        }
+        WifiDirectStatus::P2pInterfaceAvailable => {
+            tr!("Your device is compatible with Wi-Fi Direct through NetworkManager.")
+        }
+    }
 }
 
 fn show_restart_toast(win: &libadwaita::PreferencesDialog, message: &str) {

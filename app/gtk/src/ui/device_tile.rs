@@ -1,9 +1,7 @@
 use gtk4::prelude::*;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-use gnomeqs_core::{DeviceType, EndpointInfo, SendInfo, OutboundPayload};
-
-use crate::bridge::FromUi;
+use gnomeqs_core::{DeviceType, EndpointInfo, EndpointTransport};
+use crate::tr;
 use super::cursor::set_pointer_cursor;
 
 /// A button tile representing a single discovered nearby device.
@@ -15,7 +13,7 @@ impl DeviceTile {
     pub fn new(
         endpoint: EndpointInfo,
         get_files: impl Fn() -> Vec<String> + 'static,
-        from_ui_tx: async_channel::Sender<FromUi>,
+        handle_send: impl Fn(EndpointInfo, Vec<String>) + 'static,
     ) -> Self {
         let icon_name = match &endpoint.rtype {
             Some(DeviceType::Phone)  => "phone-symbolic",
@@ -40,13 +38,45 @@ impl DeviceTile {
         icon.set_pixel_size(48);
 
         let label = gtk4::Label::new(Some(&name));
+        label.add_css_class("device-tile-title");
         label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
-        label.set_max_width_chars(12);
+        label.set_max_width_chars(14);
         label.set_halign(gtk4::Align::Center);
         label.set_justify(gtk4::Justification::Center);
+        label.set_wrap(true);
+        label.set_wrap_mode(gtk4::pango::WrapMode::WordChar);
+
+        let transport_text = match endpoint.transport {
+            Some(EndpointTransport::WifiDirectPeer) => tr!("Wi-Fi Direct"),
+            _ => tr!("Wi-Fi"),
+        };
+        let status_text = match endpoint.transport {
+            Some(EndpointTransport::WifiDirectPeer) => tr!("Experimental"),
+            _ => endpoint.ip.clone().unwrap_or_else(|| tr!("Ready")),
+        };
+
+        let meta = gtk4::Label::new(Some(&status_text));
+        meta.add_css_class("device-tile-meta");
+        meta.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+        meta.set_max_width_chars(16);
+        meta.set_halign(gtk4::Align::Center);
+
+        let transport_badge = gtk4::Label::new(Some(&transport_text));
+        transport_badge.add_css_class("device-transport-badge");
+        match endpoint.transport {
+            Some(EndpointTransport::WifiDirectPeer) => {
+                transport_badge.add_css_class("transport-wifi-direct");
+            }
+            _ => {
+                transport_badge.add_css_class("transport-wifi");
+            }
+        }
+        transport_badge.set_halign(gtk4::Align::Center);
 
         vbox.append(&icon);
         vbox.append(&label);
+        vbox.append(&meta);
+        vbox.append(&transport_badge);
 
         let button = gtk4::Button::new();
         button.set_child(Some(&vbox));
@@ -57,7 +87,16 @@ impl DeviceTile {
         button.set_hexpand(false);
         button.set_vexpand(false);
         button.set_size_request(150, 150);
-        set_pointer_cursor(&button);
+
+        let interactive = match endpoint.transport {
+            Some(EndpointTransport::WifiDirectPeer) => true,
+            _ => endpoint.ip.is_some() && endpoint.port.is_some(),
+        };
+        button.set_sensitive(interactive);
+        button.set_tooltip_text(Some(&format!("{name}\n{transport_text}")));
+        if interactive {
+            set_pointer_cursor(&button);
+        }
 
         let endpoint_clone = endpoint.clone();
         button.connect_clicked(move |_| {
@@ -65,31 +104,8 @@ impl DeviceTile {
             if files.is_empty() {
                 return;
             }
-            let transfer_id = format!(
-                "{}-{}",
-                endpoint_clone.id,
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .map(|d| d.as_micros())
-                    .unwrap_or_default()
-            );
-            let send_info = SendInfo {
-                id: transfer_id,
-                name: endpoint_clone.name.clone().unwrap_or_default(),
-                device_type: endpoint_clone.rtype.clone().unwrap_or(DeviceType::Unknown),
-                addr: format!(
-                    "{}:{}",
-                    endpoint_clone.ip.as_deref().unwrap_or(""),
-                    endpoint_clone.port.as_deref().unwrap_or("0")
-                ),
-                ob: OutboundPayload::Files(files),
-            };
-            if let Err(e) = from_ui_tx.try_send(FromUi::SendPayload(send_info)) {
-                log::warn!("SendPayload failed: {e}");
-            }
+            handle_send(endpoint_clone.clone(), files);
         });
-
-        let _ = endpoint;
         Self { button }
     }
 }

@@ -48,6 +48,10 @@ pub fn get_visibility_raw() -> i32 {
     settings().int("visibility")
 }
 
+pub fn get_wifi_direct_enabled() -> bool {
+    settings().boolean("wifi-direct-enabled")
+}
+
 pub fn set_visibility_raw(v: i32) {
     let _ = settings().set_int("visibility", v);
 }

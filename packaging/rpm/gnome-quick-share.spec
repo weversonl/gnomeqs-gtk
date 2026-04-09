@@ -1,5 +1,5 @@
 Name:           gnome-quick-share
-Version:        %{?version_override}%{!?version_override:1.0.0}
+Version:        %{?version_override}%{!?version_override:1.1.0}
 Release:        1%{?dist}
 Summary:        GNOME Quick Share client
 License:        AGPL-3.0-only

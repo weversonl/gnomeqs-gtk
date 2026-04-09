@@ -18,7 +18,7 @@ use tokio::net::TcpStream;
 
 use crate::CUSTOM_DOWNLOAD;
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Serialize)]
 #[allow(dead_code)]
 pub enum DeviceType {
     Unknown = 0,

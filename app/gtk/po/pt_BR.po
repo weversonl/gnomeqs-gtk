@@ -231,3 +231,87 @@ msgstr "PIN"
 
 msgid "GnomeQS wants to share"
 msgstr "GnomeQS quer compartilhar"
+
+msgid "Wi-Fi Direct (experimental)"
+msgstr "Wi-Fi Direct (experimental)"
+
+msgid "Your device is not compatible with Wi-Fi Direct via NetworkManager."
+msgstr "Seu dispositivo não é compatível com Wi-Fi Direct via NetworkManager."
+
+msgid "Your device is not compatible with Wi-Fi Direct right now because NetworkManager is not running."
+msgstr "Seu dispositivo não é compatível com Wi-Fi Direct no momento porque o NetworkManager não está em execução."
+
+msgid "Your device compatibility with Wi-Fi Direct could not be verified right now."
+msgstr "A compatibilidade do seu dispositivo com Wi-Fi Direct não pôde ser verificada no momento."
+
+msgid "Your device is not compatible with Wi-Fi Direct because no Wi-Fi interface was detected."
+msgstr "Seu dispositivo não é compatível com Wi-Fi Direct porque nenhuma interface Wi‑Fi foi detectada."
+
+msgid "Your device is not compatible with Wi-Fi Direct right now because the Wi-Fi interface is unavailable."
+msgstr "Seu dispositivo não é compatível com Wi-Fi Direct no momento porque a interface Wi‑Fi está indisponível."
+
+msgid "Your device is not compatible with Wi-Fi Direct because no P2P interface was detected."
+msgstr "Seu dispositivo não é compatível com Wi-Fi Direct porque nenhuma interface P2P foi detectada."
+
+msgid "Your device is compatible with Wi-Fi Direct through NetworkManager."
+msgstr "Seu dispositivo é compatível com Wi‑Fi Direct via NetworkManager."
+
+msgid "Wi-Fi Direct peer detected. Session setup is not available yet."
+msgstr "Peer Wi‑Fi Direct detectado. A configuração da sessão ainda não está disponível."
+
+msgid "Could not start a Wi-Fi Direct session for {}."
+msgstr "Não foi possível iniciar uma sessão Wi‑Fi Direct para {}."
+
+msgid "Wi-Fi Direct started, but your current Wi-Fi connection changed."
+msgstr "O Wi‑Fi Direct foi iniciado, mas sua conexão Wi‑Fi atual mudou."
+
+msgid "Wi-Fi Direct session started and a direct peer link was detected."
+msgstr "A sessão Wi‑Fi Direct foi iniciada e um link direto com o peer foi detectado."
+
+msgid "Wi-Fi Direct session started. The direct transport handoff is still experimental."
+msgstr "A sessão Wi‑Fi Direct foi iniciada. A troca para o transporte direto ainda é experimental."
+
+msgid "Wi-Fi Direct session started, but no direct IP link is available yet."
+msgstr "A sessão Wi‑Fi Direct foi iniciada, mas ainda não há um link IP direto disponível."
+
+msgid "Wi-Fi Direct is not available on this device right now."
+msgstr "O Wi‑Fi Direct não está disponível neste dispositivo no momento."
+
+msgid "Wi-Fi Direct started, but the session state could not be verified."
+msgstr "O Wi‑Fi Direct foi iniciado, mas o estado da sessão não pôde ser verificado."
+
+msgid "Network status"
+msgstr "Status da rede"
+
+msgid "Wi-Fi Direct"
+msgstr "Wi‑Fi Direct"
+
+msgid "Wi-Fi"
+msgstr "Wi‑Fi"
+
+msgid "Experimental"
+msgstr "Experimental"
+
+msgid "Ready"
+msgstr "Pronto"
+
+msgid "Drop files here or use Select"
+msgstr "Solte arquivos aqui ou use Selecionar"
+
+msgid "Size unavailable"
+msgstr "Tamanho indisponível"
+
+msgid "Fixed port enabled: {}. Remember to allow it in your firewall."
+msgstr "Porta fixa ativada: {}. Lembre-se de liberá-la no firewall."
+
+msgid "Random port in use. A fixed port makes firewall rules easier."
+msgstr "Uma porta aleatória está em uso. Uma porta fixa facilita as regras de firewall."
+
+msgid "Wi-Fi Direct experimental backend is available on this device."
+msgstr "O backend experimental de Wi‑Fi Direct está disponível neste dispositivo."
+
+msgid "Wi-Fi Direct was detected, but the P2P interface is unavailable right now."
+msgstr "O Wi‑Fi Direct foi detectado, mas a interface P2P está indisponível no momento."
+
+msgid "Wi-Fi Direct experimental backend is unavailable on this device."
+msgstr "O backend experimental de Wi‑Fi Direct não está disponível neste dispositivo."

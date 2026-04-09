@@ -77,11 +77,26 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
     // Start/stop discovery when the Send tab is activated
     {
         let send_view_clone = Rc::clone(&send_view);
+        let last_page: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
+        let last_page_ref = Rc::clone(&last_page);
         stack.connect_visible_child_notify(move |s| {
-            if let Some(child) = s.visible_child() {
-                if child == send_view_clone.root.clone().upcast::<gtk4::Widget>() {
+            let current_page = s.visible_child_name().map(|name| name.to_string());
+            if *last_page_ref.borrow() == current_page {
+                log::debug!(
+                    "view stack notify ignored: visible page unchanged ({:?})",
+                    current_page
+                );
+                return;
+            }
+            *last_page_ref.borrow_mut() = current_page.clone();
+
+            match current_page.as_deref() {
+                Some("send") => {
+                    log::debug!("view stack changed to send");
                     send_view_clone.start_discovery();
-                } else {
+                }
+                _ => {
+                    log::debug!("view stack changed away from send");
                     send_view_clone.stop_discovery();
                 }
             }
@@ -197,6 +212,13 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
                     );
                     toast_overlay_clone.add_toast(toast);
                 }
+                ToUi::Toast(message) => {
+                    let toast = libadwaita::Toast::new(&message);
+                    toast_overlay_clone.add_toast(toast);
+                }
+                ToUi::WifiDirectSessionReady(ready) => {
+                    send_view_clone.handle_wifi_direct_session_ready(ready);
+                }
                 ToUi::ShowWindow => {
                     win.set_visible(true);
                     win.present();
@@ -304,6 +326,17 @@ pub fn apply_custom_css() {
   font-size: 0.96em;
   opacity: 0.78;
 }
+.app-window .send-drop-meta {
+  font-size: 0.84em;
+  opacity: 0.72;
+}
+.app-window .send-drop-card.send-drop-active {
+  border: 1px solid rgba(120, 196, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 0 0 1px rgba(120, 196, 255, 0.10),
+    0 18px 32px rgba(54, 121, 255, 0.12);
+}
 .app-window .send-select-button {
   border-radius: 12px;
   padding: 10px 18px;
@@ -332,6 +365,9 @@ pub fn apply_custom_css() {
 }
 .app-window .selected-file-tile-icon {
   opacity: 0.95;
+}
+.app-window .selected-file-preview {
+  border-radius: 12px;
 }
 .app-window .selected-file-remove-badge {
   min-width: 13px;
@@ -389,6 +425,30 @@ pub fn apply_custom_css() {
 .app-window .devices-card {
   padding: 14px 14px 10px 14px;
   border-radius: 18px;
+}
+.app-window .network-summary-card {
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.app-window.dark-mode .network-summary-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(65, 49, 132, 0.14));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.app-window.light-mode .network-summary-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.70), rgba(226, 218, 255, 0.86));
+  border: 1px solid rgba(107, 86, 195, 0.14);
+}
+.app-window .network-summary-title {
+  font-size: 0.88em;
+  font-weight: 700;
+  opacity: 0.82;
+}
+.app-window .network-summary-subtitle {
+  font-size: 0.88em;
+  line-height: 1.25;
+  opacity: 0.84;
 }
 .app-window .caption-heading {
   letter-spacing: 0.08em;
@@ -580,6 +640,40 @@ pub fn apply_custom_css() {
 .app-window.dark-mode .device-tile image,
 .app-window.dark-mode .device-tile label {
   color: #f0ebff;
+}
+.app-window .device-tile-title {
+  font-weight: 700;
+}
+.app-window .device-tile-meta {
+  font-size: 0.80em;
+  opacity: 0.72;
+}
+.app-window .device-transport-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.76em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.app-window.dark-mode .transport-wifi {
+  background: rgba(94, 234, 212, 0.12);
+  color: #8ef3e5;
+  border: 1px solid rgba(94, 234, 212, 0.20);
+}
+.app-window.light-mode .transport-wifi {
+  background: rgba(63, 188, 166, 0.12);
+  color: #197b6e;
+  border: 1px solid rgba(63, 188, 166, 0.18);
+}
+.app-window.dark-mode .transport-wifi-direct {
+  background: rgba(96, 165, 250, 0.12);
+  color: #a7d0ff;
+  border: 1px solid rgba(96, 165, 250, 0.20);
+}
+.app-window.light-mode .transport-wifi-direct {
+  background: rgba(86, 118, 235, 0.12);
+  color: #3651a8;
+  border: 1px solid rgba(86, 118, 235, 0.18);
 }
 "#
     .replace("__FONT_SIZE_PX__", &font_size_px.to_string());

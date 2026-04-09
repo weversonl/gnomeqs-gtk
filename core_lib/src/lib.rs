@@ -27,11 +27,17 @@ mod errors;
 mod hdl;
 mod manager;
 mod utils;
+mod wifi_direct;
 
-pub use hdl::{EndpointInfo, OutboundPayload, State, Visibility};
+pub use hdl::{EndpointInfo, EndpointTransport, OutboundPayload, State, Visibility};
 pub use hdl::info::TransferMetadata;
 pub use manager::SendInfo;
 pub use utils::{DeviceType, RemoteDeviceInfo};
+pub use wifi_direct::{
+    WifiDirectBackend, WifiDirectCapability, WifiDirectStatus, activate_wifi_direct_peer,
+    detect_wifi_direct_capability, run_wifi_direct_discovery, wait_for_wifi_direct_session,
+    WifiDirectSessionInfo,
+};
 
 pub mod sharing_nearby {
     include!(concat!(env!("OUT_DIR"), "/sharing.nearby.rs"));
@@ -168,6 +174,8 @@ impl RQS {
         &mut self,
         sender: broadcast::Sender<EndpointInfo>,
     ) -> Result<(), anyhow::Error> {
+        self.stop_discovery();
+
         let tracker = self
             .tracker
             .as_ref()

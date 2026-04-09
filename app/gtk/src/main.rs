@@ -12,8 +12,9 @@ use gtk4::prelude::*;
 
 use gnomeqs_core::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use gnomeqs_core::{RQS, Visibility};
+use tokio_util::sync::CancellationToken;
 
-use bridge::{FromUi, ToUi};
+use bridge::{FromUi, ToUi, WifiDirectSendRequest, WifiDirectSessionReady};
 use state::AppState;
 
 mod bridge;
@@ -177,14 +178,26 @@ fn main() -> anyhow::Result<()> {
     let rqs_arc = Arc::new(Mutex::new(core_rqs));
     let discovery_task: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>> =
         Arc::new(Mutex::new(None));
+    let wifi_direct_task: Arc<
+        Mutex<Option<(CancellationToken, tokio::task::JoinHandle<()>)>>,
+    > = Arc::new(Mutex::new(None));
     {
         let rqs = Arc::clone(&rqs_arc);
         let send_tx = send_info_tx.clone();
         let ui_tx = to_ui_tx.clone();
         let discovery_task = Arc::clone(&discovery_task);
+        let wifi_direct_task = Arc::clone(&wifi_direct_task);
         rt.spawn(async move {
             while let Ok(cmd) = from_ui_rx.recv().await {
-                handle_from_ui(cmd, &rqs, &send_tx, &ui_tx, &discovery_task).await;
+                handle_from_ui(
+                    cmd,
+                    &rqs,
+                    &send_tx,
+                    &ui_tx,
+                    &discovery_task,
+                    &wifi_direct_task,
+                )
+                .await;
             }
         });
     }
@@ -318,6 +331,7 @@ async fn handle_from_ui(
     send_tx: &tokio::sync::mpsc::Sender<gnomeqs_core::SendInfo>,
     ui_tx: &async_channel::Sender<ToUi>,
     discovery_task: &Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
+    wifi_direct_task: &Arc<Mutex<Option<(CancellationToken, tokio::task::JoinHandle<()>)>>>,
 ) {
     match cmd {
         FromUi::Accept(id) => {
@@ -361,6 +375,91 @@ async fn handle_from_ui(
                 warn!("SendPayload: {e}");
             }
         }
+        FromUi::StartWifiDirectSend(WifiDirectSendRequest {
+            peer_id,
+            peer_name,
+            peer_mac,
+            files,
+        }) => {
+            info!(
+                "starting Wi-Fi Direct session for peer_id={} peer_name={} files={}",
+                peer_id,
+                peer_name,
+                files.len()
+            );
+            if let Err(e) = gnomeqs_core::activate_wifi_direct_peer(&peer_mac).await {
+                warn!("StartWifiDirectSend (peer_id={peer_id}): {e}");
+                let _ = ui_tx
+                    .send(ToUi::Toast(
+                        tr!("Could not start a Wi-Fi Direct session for {}.")
+                            .replace("{}", &peer_name),
+                    ))
+                    .await;
+                return;
+            }
+
+            match gnomeqs_core::wait_for_wifi_direct_session(Duration::from_secs(12)).await {
+                Ok(Some(session)) => {
+                    let _ = ui_tx
+                        .send(ToUi::WifiDirectSessionReady(WifiDirectSessionReady {
+                            peer_id: peer_id.clone(),
+                            peer_name: peer_name.clone(),
+                            session: session.clone(),
+                        }))
+                        .await;
+
+                    if !session.wifi_connected {
+                        let _ = ui_tx
+                            .send(ToUi::Toast(tr!(
+                                "Wi-Fi Direct started, but your current Wi-Fi connection changed."
+                            )))
+                            .await;
+                    } else if !session.peer_ipv4_candidates.is_empty() {
+                        let _ = ui_tx
+                            .send(ToUi::Toast(tr!(
+                                "Wi-Fi Direct session started and a direct peer link was detected."
+                            )))
+                            .await;
+                    } else if !session.ipv4_addresses.is_empty() {
+                        let _ = ui_tx
+                            .send(ToUi::Toast(tr!(
+                                "Wi-Fi Direct session started. The direct transport handoff is still experimental."
+                            )))
+                            .await;
+                    } else {
+                        let _ = ui_tx
+                            .send(ToUi::Toast(tr!(
+                                "Wi-Fi Direct session started, but no direct IP link is available yet."
+                            )))
+                            .await;
+                    }
+                    info!(
+                        "Wi-Fi Direct session for peer_id={} connection={:?} ip_interface={:?} ipv4={:?} peer_ipv4={:?} wifi_connected={}",
+                        peer_id,
+                        session.connection_name,
+                        session.ip_interface,
+                        session.ipv4_addresses,
+                        session.peer_ipv4_candidates,
+                        session.wifi_connected
+                    );
+                }
+                Ok(None) => {
+                    let _ = ui_tx
+                        .send(ToUi::Toast(tr!(
+                            "Wi-Fi Direct is not available on this device right now."
+                        )))
+                        .await;
+                }
+                Err(e) => {
+                    warn!("Wi-Fi Direct session wait failed (peer_id={peer_id}): {e}");
+                    let _ = ui_tx
+                        .send(ToUi::Toast(tr!(
+                            "Wi-Fi Direct started, but the session state could not be verified."
+                        )))
+                        .await;
+                }
+            }
+        }
         FromUi::StartDiscovery(sender) => {
             if let Err(e) = rqs.lock().unwrap().discovery(sender.clone()) {
                 warn!("StartDiscovery: {e}");
@@ -386,11 +485,36 @@ async fn handle_from_ui(
                     }
                 }
             }));
+
+            if settings::get_wifi_direct_enabled() {
+                let mut wd_guard = wifi_direct_task.lock().unwrap();
+                if let Some((token, handle)) = wd_guard.take() {
+                    token.cancel();
+                    handle.abort();
+                }
+
+                let token = CancellationToken::new();
+                let sender = sender.clone();
+                let token_for_task = token.clone();
+                let handle = tokio::spawn(async move {
+                    if let Err(e) =
+                        gnomeqs_core::run_wifi_direct_discovery(sender, token_for_task).await
+                    {
+                        warn!("Wi-Fi Direct discovery: {e}");
+                    }
+                });
+                *wd_guard = Some((token, handle));
+            }
         }
         FromUi::StopDiscovery => {
             rqs.lock().unwrap().stop_discovery();
             if let Some(handle) = discovery_task.lock().unwrap().take() {
                 handle.abort();
+            }
+            let task = wifi_direct_task.lock().unwrap().take();
+            if let Some((token, handle)) = task {
+                token.cancel();
+                let _ = handle.await;
             }
         }
         FromUi::ChangeVisibility(vis) => {
