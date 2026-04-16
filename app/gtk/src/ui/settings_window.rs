@@ -49,14 +49,11 @@ fn build_general_page(
     page
 }
 
-// ── Behavior ─────────────────────────────────────────────────────────────────
-
 fn build_behavior_group(_from_ui_tx: &async_channel::Sender<FromUi>) -> libadwaita::PreferencesGroup {
     let group = libadwaita::PreferencesGroup::new();
     group.set_title(&tr!("Behavior"));
     let gsettings = settings();
 
-    // Autostart
     let autostart = libadwaita::SwitchRow::new();
     autostart.set_title(&tr!("Start on boot"));
     autostart.set_active(settings::get_autostart());
@@ -73,7 +70,6 @@ fn build_behavior_group(_from_ui_tx: &async_channel::Sender<FromUi>) -> libadwai
     }
     group.add(&autostart);
 
-    // Keep running on close
     let keep_running = libadwaita::SwitchRow::new();
     keep_running.set_title(&tr!("Keep running on close"));
     keep_running.set_active(settings::get_keep_running_on_close());
@@ -81,7 +77,6 @@ fn build_behavior_group(_from_ui_tx: &async_channel::Sender<FromUi>) -> libadwai
     gsettings.bind("keep-running-on-close", &keep_running, "active").build();
     group.add(&keep_running);
 
-    // Start minimized
     let start_min = libadwaita::SwitchRow::new();
     start_min.set_title(&tr!("Start minimized"));
     start_min.set_active(gsettings.boolean("start-minimized"));
@@ -89,7 +84,6 @@ fn build_behavior_group(_from_ui_tx: &async_channel::Sender<FromUi>) -> libadwai
     gsettings.bind("start-minimized", &start_min, "active").build();
     group.add(&start_min);
 
-    // Monochrome tray
     let mono_tray = libadwaita::SwitchRow::new();
     mono_tray.set_title(&tr!("Monochrome tray icon"));
     mono_tray.set_active(gsettings.boolean("tray-monochrome"));
@@ -100,14 +94,11 @@ fn build_behavior_group(_from_ui_tx: &async_channel::Sender<FromUi>) -> libadwai
     group
 }
 
-// ── Appearance ────────────────────────────────────────────────────────────────
-
 fn build_appearance_group(win: &libadwaita::PreferencesDialog) -> libadwaita::PreferencesGroup {
     let group = libadwaita::PreferencesGroup::new();
     group.set_title(&tr!("Appearance"));
     let gsettings = settings();
 
-    // Theme
     let theme_items = vec![tr!("System"), tr!("Light"), tr!("Dark")];
     let theme_item_refs: Vec<&str> = theme_items.iter().map(String::as_str).collect();
     let theme_row = libadwaita::ComboRow::new();
@@ -135,7 +126,6 @@ fn build_appearance_group(win: &libadwaita::PreferencesDialog) -> libadwaita::Pr
     }
     group.add(&theme_row);
 
-    // Language
     let lang_items = vec![tr!("English"), tr!("Portuguese (Brazil)")];
     let lang_item_refs: Vec<&str> = lang_items.iter().map(String::as_str).collect();
     let lang_row = libadwaita::ComboRow::new();
@@ -163,7 +153,6 @@ fn build_appearance_group(win: &libadwaita::PreferencesDialog) -> libadwaita::Pr
     }
     group.add(&lang_row);
 
-    // Font size
     let font_items = vec![tr!("Small"), tr!("Normal"), tr!("Large"), tr!("Extra large")];
     let font_item_refs: Vec<&str> = font_items.iter().map(String::as_str).collect();
     let font_row = libadwaita::ComboRow::new();
@@ -184,8 +173,6 @@ fn build_appearance_group(win: &libadwaita::PreferencesDialog) -> libadwaita::Pr
 
     group
 }
-
-// ── Files ─────────────────────────────────────────────────────────────────────
 
 fn build_files_group(
     from_ui_tx: &async_channel::Sender<FromUi>,
@@ -239,8 +226,6 @@ fn build_files_group(
     group
 }
 
-// ── History ───────────────────────────────────────────────────────────────────
-
 fn build_history_group() -> libadwaita::PreferencesGroup {
     let group = libadwaita::PreferencesGroup::new();
     group.set_title(&tr!("History"));
@@ -291,8 +276,6 @@ fn build_history_group() -> libadwaita::PreferencesGroup {
 
     group
 }
-
-// ── Network ───────────────────────────────────────────────────────────────────
 
 fn build_network_group(win: &libadwaita::PreferencesDialog) -> libadwaita::PreferencesGroup {
     let group = libadwaita::PreferencesGroup::new();
@@ -356,8 +339,6 @@ fn build_network_group(win: &libadwaita::PreferencesDialog) -> libadwaita::Prefe
     group.add(&wifi_row);
     group
 }
-
-// ── About page ────────────────────────────────────────────────────────────────
 
 fn build_about_page() -> libadwaita::PreferencesPage {
     let page = libadwaita::PreferencesPage::new();

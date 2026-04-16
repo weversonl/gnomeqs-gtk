@@ -6,7 +6,7 @@ use gtk4::prelude::*;
 use libadwaita::prelude::*;
 
 use gnomeqs_core::channel::{ChannelMessage, ChannelDirection};
-use gnomeqs_core::{State, Visibility};
+use gnomeqs_core::Visibility;
 
 use crate::bridge::FromUi;
 use crate::settings;
@@ -39,7 +39,6 @@ impl ReceiveView {
     ) -> Self {
         let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
 
-        // ── Visibility card ───────────────────────────────────────────────────
         let vis_group = gtk4::ListBox::new();
         vis_group.add_css_class("boxed-list");
         vis_group.add_css_class("glass-card");
@@ -82,14 +81,12 @@ impl ReceiveView {
         vis_group.append(&vis_row);
         root.append(&vis_group);
 
-        // ── Status page (empty state) ─────────────────────────────────────────
         let empty_page = build_pulse_placeholder(
             Some(&tr!("Ready to receive")),
             None,
             false,
         );
 
-        // ── Transfer list ─────────────────────────────────────────────────────
         let scroll = gtk4::ScrolledWindow::new();
         scroll.set_vexpand(true);
         scroll.set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
@@ -176,9 +173,7 @@ impl ReceiveView {
         }
     }
 
-    /// Handle an inbound ChannelMessage and update the UI accordingly.
     pub fn handle_channel_message(&self, msg: ChannelMessage) {
-        // Ignore messages going the other direction
         if msg.direction != ChannelDirection::LibToFront {
             return;
         }
@@ -196,7 +191,6 @@ impl ReceiveView {
         let mut map = self.transfers.borrow_mut();
 
         if !map.contains_key(&id) {
-            // Create a new row
             let row = TransferRow::new(id.clone(), self.from_ui_tx.clone());
             {
                 let id = id.clone();
@@ -246,17 +240,9 @@ impl ReceiveView {
             map.insert(id, row);
         } else if let Some(row) = map.get(&id) {
             row.update_state(&state, &meta);
-            // Remove terminal rows from the list after a delay
-            match &state {
-                State::Disconnected | State::Finished | State::Rejected | State::Cancelled => {
-                    // Row already shows Clear button; user dismisses manually
-                }
-                _ => {}
-            }
         }
     }
 
-    /// Update the visibility UI when the Tokio layer reports a change.
     pub fn update_visibility(&self, vis: Visibility) {
         settings::set_visibility_raw(vis as i32);
         update_visibility_row(&self.vis_row, &self.vis_icon, vis);

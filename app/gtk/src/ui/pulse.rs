@@ -93,7 +93,6 @@ impl PulseWidget {
                     (1.0, 1.0, 1.0, 0.96)
                 };
 
-                // Ambient glow.
                 cr.set_source_rgba(ambient_r, ambient_g, ambient_b, ambient_a);
                 cr.arc(cx, cy, unit * 0.58, 0.0, 2.0 * PI);
                 let _ = cr.fill();
@@ -111,7 +110,6 @@ impl PulseWidget {
                     let _ = cr.fill();
                 }
 
-                // Core.
                 cr.set_source_rgba(core_r, core_g, core_b, core_a);
                 cr.arc(cx, cy, unit * 0.12, 0.0, 2.0 * PI);
                 let _ = cr.fill();

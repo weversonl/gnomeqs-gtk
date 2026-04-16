@@ -52,7 +52,6 @@ impl MDnsDiscovery {
         let receiver = self.daemon.browse(service_type)?;
         let mut cleanup_tick = interval(Duration::from_millis(800));
 
-        // Map with fullname as key and EndpointInfo as value
         let mut cache: HashMap<String, EndpointInfo> = HashMap::new();
         let mut pending_removals: HashMap<String, Instant> = HashMap::new();
 
@@ -107,18 +106,15 @@ impl MDnsDiscovery {
                                         None => continue,
                                     };
 
-                                    // Check that the IP is not a "self IP"
                                     if !is_not_self_ip(ip) {
                                         continue;
                                     }
 
-                                    // Decode the "n" text properties
                                     let n = match info.get_property("n") {
                                         Some(_n) => _n,
                                         None => continue,
                                     };
 
-                                    // Parse the endpoint info
                                     let (dt, dn) = match parse_mdns_endpoint_info(n.val_str()) {
                                         Ok(r) => r,
                                         Err(_) => continue

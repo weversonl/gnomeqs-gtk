@@ -67,7 +67,6 @@ impl MDnsServer {
         let mut interval = interval_at(Instant::now() + TICK_INTERVAL, TICK_INTERVAL);
         let mut registered = false;
 
-        // Register immediately if starting visible
         if visibility != Visibility::Invisible {
             self.daemon.register(self.service_info.clone())?;
             registered = true;
@@ -115,9 +114,6 @@ impl MDnsServer {
 
                     debug!("{INNER_NAME}: ble_receiver: got event");
                     if registered {
-                        // Android can sometime not see the mDNS service if the service
-                        // was running BEFORE Android started the Discovery phase for QuickShare.
-                        // So resend a broadcast if there's a android device sending.
                         self.daemon.register_resend(self.service_info.get_fullname())?;
                     } else {
                         self.daemon.register(self.service_info.clone())?;
@@ -139,7 +135,6 @@ impl MDnsServer {
             }
         }
 
-        // Unregister the mDNS service - we're shutting down
         if registered {
             let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
             if let Ok(event) = receiver.recv() {

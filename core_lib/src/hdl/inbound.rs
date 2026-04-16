@@ -98,7 +98,6 @@ impl InboundRequest {
     }
 
     pub async fn handle(&mut self) -> Result<(), anyhow::Error> {
-        // Buffer for the 4-byte length
         let mut length_buf = [0u8; 4];
 
         tokio::select! {
@@ -165,18 +164,15 @@ impl InboundRequest {
 
     pub async fn _handle(&mut self, length_buf: [u8; 4]) -> Result<(), anyhow::Error> {
         let msg_length = u32::from_be_bytes(length_buf) as usize;
-        // Ensure the message length is not unreasonably big to avoid allocation attacks
         if msg_length > SANE_FRAME_LENGTH as usize {
             error!("Message length too big");
             return Err(anyhow!("value"));
         }
 
-        // Allocate buffer for the actual message and read it
         let mut frame_data = vec![0u8; msg_length];
         stream_read_exact(&mut self.socket, &mut frame_data).await?;
 
         let current_state = &self.state;
-        // Now determine what will be the request type based on current state
         match current_state.state {
             State::Initial => {
                 debug!("Handling State::Initial frame");
@@ -184,7 +180,6 @@ impl InboundRequest {
                 let rdi = self.process_connection_request(&frame)?;
                 info!("RemoteDeviceInfo: {:?}", &rdi);
 
-                // Advance current state
                 self.update_state(
                     |e: &mut InnerState| {
                         e.state = State::ReceivedConnectionRequest;
@@ -271,24 +266,20 @@ impl InboundRequest {
             .as_ref()
             .ok_or_else(|| anyhow!("Missing endpoint info"))?;
 
-        // Check if endpoint info length is greater than 17
         if endpoint_info.len() <= 17 {
             return Err(anyhow!("Endpoint info too short"));
         }
 
         let device_name_length = endpoint_info[17] as usize;
-        // Validate length including device name
         if endpoint_info.len() < device_name_length + 18 {
             return Err(anyhow!(
                 "Endpoint info too short to contain the device name"
             ));
         }
 
-        // Extract and validate device name based on length
         let device_name = std::str::from_utf8(&endpoint_info[18..(18 + device_name_length)])
             .map_err(|_| anyhow!("Device name is not valid UTF-8"))?;
 
-        // Parsing the device type
         let raw_device_type = (endpoint_info[0] & 7) >> 1_usize;
 
         Ok(RemoteDeviceInfo {
@@ -324,7 +315,6 @@ impl InboundRequest {
             return Err(anyhow!("UKey2: client_init.random.len != 32"));
         }
 
-        // Searching for preferred cipher commitment
         let mut found = false;
         for commitment in &client_init.cipher_commitments {
             trace!("CipherCommitment: {:?}", commitment.handshake_cipher());
@@ -563,7 +553,6 @@ impl InboundRequest {
                             .entry(payload_id)
                             .or_insert_with(|| Vec::with_capacity(header.total_size() as usize));
 
-                        // Get the current length of the buffer, if it exists, without holding a mutable borrow.
                         let buffer_len = self.state.payload_buffers.get(&payload_id).unwrap().len();
                         if chunk.offset() != buffer_len as i64 {
                             self.state.payload_buffers.remove(&payload_id);
@@ -853,7 +842,6 @@ impl InboundRequest {
             .as_ref()
             .ok_or_else(|| anyhow!("Missing required fields"))?;
 
-        // No need to inform the channel here, we'll do it anyway with files info
         self.update_state(
             |e| {
                 e.state = State::WaitingForUserConsent;
@@ -976,7 +964,6 @@ impl InboundRequest {
                     .await;
                 }
                 text_metadata::Type::Unknown => {
-                    // Reject transfer
                     self.reject_transfer(Some(
 						sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
 					))
@@ -1009,7 +996,6 @@ impl InboundRequest {
             )
             .await;
         } else {
-            // Reject transfer
             self.reject_transfer(Some(
                 sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
             ))
@@ -1110,7 +1096,6 @@ impl InboundRequest {
             .ok_or_else(|| anyhow!("Missing required fields"))?;
 
         let mut bytes = vec![0x04];
-        // Ensure no more than 32 bytes for the keys
         if peer_p256_key.x.len() > 32 {
             bytes.extend_from_slice(&peer_p256_key.x[peer_p256_key.x.len() - 32..]);
         } else {
@@ -1224,15 +1209,13 @@ impl InboundRequest {
             }),
         };
 
-        // Encrypt and send offline
         self.encrypt_and_send(&wrapper).await?;
 
-        // Send lastChunk
         let transfer = PayloadTransferFrame {
             packet_type: Some(PacketType::Data.into()),
             payload_chunk: Some(PayloadChunk {
                 offset: Some(body_size as i64),
-                flags: Some(1), // lastChunk
+                flags: Some(1),
                 body: Some(vec![]),
             }),
             payload_header: Some(payload_header),
@@ -1250,7 +1233,6 @@ impl InboundRequest {
             }),
         };
 
-        // Encrypt and send offline
         self.encrypt_and_send(&wrapper).await?;
 
         Ok(())
@@ -1321,7 +1303,6 @@ impl InboundRequest {
     async fn send_frame(&mut self, data: Vec<u8>) -> Result<(), anyhow::Error> {
         let length = data.len();
 
-        // Prepare length prefix in big-endian format
         let length_bytes = [
             (length >> 24) as u8,
             (length >> 16) as u8,
@@ -1382,9 +1363,6 @@ impl InboundRequest {
             meta: self.state.transfer_metadata.clone(),
             ..Default::default()
         });
-        // Add a small sleep timer to allow the Tokio runtime to have
-        // some spare time to process channel's message. Otherwise it
-        // get spammed by new requests. Currently set to 10 micro secs.
         tokio::time::sleep(SANITY_DURATION).await;
     }
 }

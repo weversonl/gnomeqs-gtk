@@ -48,13 +48,10 @@ pub struct RemoteDeviceInfo {
 
 impl RemoteDeviceInfo {
     pub fn serialize(&self) -> Vec<u8> {
-        // 1 byte: Version(3 bits)|Visibility(1 bit)|Device Type(3 bits)|Reserved(1 bit)
         let mut endpoint_info: Vec<u8> = vec![((self.device_type.clone() as u8) << 1) & 0b111];
 
-        // 16 bytes: unknown random bytes
         endpoint_info.extend((0..16).map(|_| rand::rng().random_range(0..=255)));
 
-        // Device name in UTF-8 prefixed with 1-byte length
         let mut name_chars = self.name.as_bytes().to_vec();
         if name_chars.len() > 255 {
             name_chars.truncate(255);
@@ -86,8 +83,6 @@ pub fn gen_mdns_name(endpoint_id: [u8; 4]) -> String {
 pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     let mut record = Vec::new();
 
-    // 1 byte: Version(3 bits)|Visibility(1 bit)|Device Type(3 bits)|Reserved(1 bits)
-    // Device types: unknown=0, phone=1, tablet=2, laptop=3
     record.push(device_type << 1);
 
     let unknown_bytes = rand::rng().random::<[u8; 16]>();
@@ -187,9 +182,7 @@ pub fn get_download_dir() -> PathBuf {
                 return mg.as_ref().unwrap().to_path_buf();
             }
         }
-        Err(_) => {
-            // TODO
-        }
+        Err(_) => {}
     }
 
     if let Some(user_dirs) = directories::UserDirs::new() {

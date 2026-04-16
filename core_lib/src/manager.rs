@@ -114,7 +114,6 @@ impl TcpServer {
         Ok(())
     }
 
-    /// To be called inside a separate task if we want to handle concurrency
     pub async fn connect(&self, ctk: CancellationToken, si: SendInfo) -> Result<(), anyhow::Error> {
         debug!("{INNER_NAME}: Connecting to: {}", si.addr);
         let socket = TcpStream::connect(si.addr.clone()).await?;
@@ -132,9 +131,7 @@ impl TcpServer {
             },
         );
 
-        // Send connection request
         or.send_connection_request().await?;
-        // Send UKEY init
         or.send_ukey2_client_init().await?;
 
         loop {

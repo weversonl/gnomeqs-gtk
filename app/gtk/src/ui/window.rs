@@ -40,23 +40,18 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
         });
     }
 
-    // ── Toast overlay (wraps entire content) ──────────────────────────────────
     let toast_overlay = libadwaita::ToastOverlay::new();
 
-    // ── Header bar ────────────────────────────────────────────────────────────
     let header_bar = libadwaita::HeaderBar::new();
 
-    // Settings button
     let settings_btn = gtk4::Button::from_icon_name("preferences-system-symbolic");
     settings_btn.set_tooltip_text(Some(&tr!("Settings")));
     settings_btn.add_css_class("flat");
     set_pointer_cursor(&settings_btn);
     header_bar.pack_end(&settings_btn);
 
-    // ── View stack (Receive / Send) ───────────────────────────────────────────
     let stack = libadwaita::ViewStack::new();
 
-    // Build receive and send views
     let receive_view = Rc::new(ReceiveView::new(state.from_ui_tx.clone(), toast_overlay.clone()));
     let send_view = Rc::new(SendView::new(state.from_ui_tx.clone()));
 
@@ -74,7 +69,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
         "share-symbolic",
     );
 
-    // Start/stop discovery when the Send tab is activated
     {
         let send_view_clone = Rc::clone(&send_view);
         let last_page: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
@@ -103,8 +97,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
         });
     }
 
-    // ── Layout ────────────────────────────────────────────────────────────────
-    // ── Bottom floating switcher ─────────────────────────────────────────────
     let bottom_switcher = libadwaita::ViewSwitcher::new();
     bottom_switcher.set_policy(libadwaita::ViewSwitcherPolicy::Wide);
     bottom_switcher.set_stack(Some(&stack));
@@ -135,7 +127,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
     toast_overlay.set_child(Some(&vbox));
     win.set_content(Some(&toast_overlay));
 
-    // ── Settings button handler ───────────────────────────────────────────────
     {
         let win_clone = win.clone();
         let tx = state.from_ui_tx.clone();
@@ -145,7 +136,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
         });
     }
 
-    // ── Close-to-tray behavior ────────────────────────────────────────────────
     win.connect_close_request(move |w| {
         settings::save_window_state(w.width(), w.height(), w.is_maximized());
         if settings::get_keep_running_on_close() {
@@ -155,7 +145,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
         glib::Propagation::Proceed
     });
 
-    // ── Async message loop: Tokio → GTK ──────────────────────────────────────
     let rx = state.to_ui_rx.clone();
     let win_weak = win.downgrade();
     let receive_view_clone = Rc::clone(&receive_view);
@@ -176,7 +165,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
                                 use gnomeqs_core::channel::TransferType;
                                 match rtype {
                                     TransferType::Inbound => {
-                                        // Show notification on WaitingForUserConsent
                                         if cm.state == Some(gnomeqs_core::State::WaitingForUserConsent) {
                                             if let Some(meta) = &cm.meta {
                                                 let name = meta.source.as_ref()
@@ -208,7 +196,6 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
                     receive_view_clone.update_visibility(vis);
                 }
                 ToUi::BleNearby => {
-                    // Nudge user to become temporarily visible
                     let toast = libadwaita::Toast::new(
                         "A nearby device wants to share. Tap to become visible.",
                     );
@@ -761,8 +748,6 @@ fn sync_theme_class(win: &impl IsA<gtk4::Widget>) {
     }
 }
 
-/// Send a native desktop notification for an inbound transfer request.
-/// Action buttons on the notification route through Application-level actions.
 fn send_notification(
     app: Option<&libadwaita::Application>,
     sender_name: &str,
@@ -772,7 +757,6 @@ fn send_notification(
     let n = gio::Notification::new("GnomeQS");
     n.set_body(Some(&format!("{sender_name} wants to share")));
 
-    // Action target is the transfer id as a string variant
     let id_variant = glib::Variant::from(transfer_id);
     n.add_button_with_target_value(
         &tr!("Accept"),

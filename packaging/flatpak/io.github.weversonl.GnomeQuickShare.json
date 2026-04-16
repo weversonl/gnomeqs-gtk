@@ -29,7 +29,7 @@
       "buildsystem": "simple",
       "build-commands": [
         "install -Dm644 cargo/config .cargo/config.toml",
-        "meson setup --prefix=/app --buildtype=release _build",
+        "meson setup --prefix=/app --buildtype=release -Dtray=false _build",
         "ninja -j $FLATPAK_BUILDER_N_JOBS -C _build",
         "meson install -C _build"
       ],
@@ -37,7 +37,7 @@
         {
           "type": "git",
           "url": "https://github.com/weversonl/gnome-quick-share.git",
-          "commit": "99319a77c122f865ca0a0ba1b61a9b4fb0f20de1"
+          "commit": "55047061aee000587b122d6779dc7414f2ac4a99"
         },
         "cargo-sources.json"
       ]

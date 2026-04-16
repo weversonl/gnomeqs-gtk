@@ -98,7 +98,6 @@ impl SendView {
         let known_mdns_endpoints: Rc<RefCell<HashMap<String, KnownMdnsEndpoint>>> =
             Rc::new(RefCell::new(HashMap::new()));
 
-        // ── File selection area ───────────────────────────────────────────────
         let files_group = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
         files_group.add_css_class("glass-card");
         files_group.add_css_class("send-drop-card");
@@ -160,7 +159,6 @@ impl SendView {
         files_group.append(&selected_files_flow);
         content.append(&files_group);
 
-        // ── Outbound transfer list ──────────────────────────────────────────
         let transfer_header = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
         transfer_header.set_margin_top(2);
         transfer_header.set_margin_bottom(8);
@@ -214,7 +212,6 @@ impl SendView {
         }
         load_send_history(&recent_list, &history_button, &transfer_header);
 
-        // ── File picker button ────────────────────────────────────────────────
         {
             let selected_files = Rc::clone(&selected_files);
             let files_subtitle_clone = files_subtitle.clone();
@@ -230,7 +227,6 @@ impl SendView {
                 let flow_ref = selected_files_flow_clone.clone();
                 let upload_icon_ref = upload_icon_clone.clone();
 
-                // Get the root window
                 let window = btn.root().and_downcast::<gtk4::Window>();
                 let dialog = gtk4::FileDialog::new();
                 dialog.set_title(&tr!("Select files to send"));
@@ -268,7 +264,6 @@ impl SendView {
             });
         }
 
-        // ── Clear files button ────────────────────────────────────────────────
         {
             let selected_files = Rc::clone(&selected_files);
             let files_subtitle_clone = files_subtitle.clone();
@@ -288,7 +283,6 @@ impl SendView {
             });
         }
 
-        // ── Drop target ───────────────────────────────────────────────────────
         let drop_target = gtk4::DropTarget::new(
             gio::File::static_type(),
             gtk4::gdk::DragAction::COPY,
@@ -338,7 +332,6 @@ impl SendView {
         }
         files_group.add_controller(drop_motion);
 
-        // ── Nearby devices area ───────────────────────────────────────────────
         let devices_card = gtk4::Box::new(gtk4::Orientation::Vertical, 10);
         devices_card.add_css_class("glass-card");
         devices_card.add_css_class("devices-card");
@@ -407,7 +400,6 @@ impl SendView {
         devices_card.append(&devices_stack);
         content.append(&devices_card);
 
-        // ── Refresh button ────────────────────────────────────────────────────
         {
             let devices = Rc::clone(&devices);
             let devices_stack = devices_stack.clone();
@@ -455,7 +447,6 @@ impl SendView {
         }
     }
 
-    /// Update the device list when an endpoint appears or disappears.
     pub fn update_endpoint(&self, info: EndpointInfo) {
         self.try_auto_send_pending_wifi_direct(&info);
 
@@ -463,7 +454,6 @@ impl SendView {
         let mut devices = self.devices.borrow_mut();
 
         if !present {
-            // Remove the tile
             if let Some(tile) = devices.remove(&info.id) {
                 self.devices_box.remove(&tile.button);
             }
@@ -498,7 +488,7 @@ impl SendView {
         }
 
         if devices.contains_key(&info.id) {
-            return; // Already present, no update needed
+            return;
         }
 
         let files = Rc::clone(&self.selected_files);
@@ -582,7 +572,6 @@ impl SendView {
         self.devices_stack.set_visible_child(&self.devices_scroll);
     }
 
-    /// Kick off mDNS discovery when the Send tab is shown.
     pub fn start_discovery(&self) {
         if *self.discovery_active.borrow() {
             log::debug!("send view discovery start ignored: already active");
@@ -601,7 +590,6 @@ impl SendView {
         }
     }
 
-    /// Stop mDNS discovery when the Send tab is hidden.
     pub fn stop_discovery(&self) {
         if !*self.discovery_active.borrow() && self.pending_start.borrow().is_none() {
             log::debug!("send view discovery stop ignored: already inactive");

@@ -56,14 +56,12 @@ pub struct InnerState {
     pub client_seq: i32,
     pub encryption_done: bool,
 
-    // Subject to be used-facing for progress, ...
     pub state: State,
     pub remote_device_info: Option<RemoteDeviceInfo>,
     pub pin_code: Option<String>,
     pub transfer_metadata: Option<TransferMetadata>,
     pub transferred_files: HashMap<i64, InternalFileInfo>,
 
-    // Everything needed for encryption/decryption/verif
     pub cipher_commitment: Option<CipherCommitment>,
     pub private_key: Option<SecretKey>,
     pub public_key: Option<PublicKey>,
@@ -75,11 +73,7 @@ pub struct InnerState {
     pub encrypt_key: Option<Vec<u8>>,
     pub send_hmac_key: Option<Vec<u8>>,
 
-    // Used to handle/track ingress transfer
     pub text_payload: Option<TextPayloadInfo>,
-    // pub text_payload_id: i64,
-    // pub text_is_url: bool,
-    // pub wifi_ssid: Option<String>,
     pub payload_buffers: HashMap<i64, Vec<u8>>,
 }
 

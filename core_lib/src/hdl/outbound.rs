@@ -142,7 +142,6 @@ impl OutboundRequest {
     }
 
     pub async fn handle(&mut self) -> Result<(), anyhow::Error> {
-        // Buffer for the 4-byte length
         let mut length_buf = [0u8; 4];
 
         tokio::select! {
@@ -219,18 +218,15 @@ impl OutboundRequest {
 
     pub async fn _handle(&mut self, length_buf: [u8; 4]) -> Result<(), anyhow::Error> {
         let msg_length = u32::from_be_bytes(length_buf) as usize;
-        // Ensure the message length is not unreasonably big to avoid allocation attacks
         if msg_length > SANE_FRAME_LENGTH as usize {
             error!("Message length too big");
             return Err(anyhow!("value"));
         }
 
-        // Allocate buffer for the actual message and read it
         let mut frame_data = vec![0u8; msg_length];
         stream_read_exact(&mut self.socket, &mut frame_data).await?;
 
         let current_state = &self.state;
-        // Now determine what will be the request type based on current state
         match current_state.state {
             State::SentUkeyClientInit => {
                 debug!("Handling State::SentUkeyClientInit frame");
@@ -244,7 +240,6 @@ impl OutboundRequest {
                 .await;
                 self.process_ukey2_server_init(&msg).await?;
 
-                // Advance current state
                 self.update_state(
                     |e: &mut InnerState| {
                         e.state = State::SentUkeyClientFinish;
@@ -259,7 +254,6 @@ impl OutboundRequest {
                 let frame = location_nearby_connections::OfflineFrame::decode(&*frame_data)?;
                 self.process_connection_response(&frame).await?;
 
-                // Advance current state
                 self.update_state(
                     |e: &mut InnerState| {
                         e.state = State::SentPairedKeyEncryption;
@@ -548,7 +542,6 @@ impl OutboundRequest {
                             .entry(payload_id)
                             .or_insert_with(|| Vec::with_capacity(header.total_size() as usize));
 
-                        // Get the current length of the buffer, if it exists, without holding a mutable borrow.
                         let buffer_len = self.state.payload_buffers.get(&payload_id).unwrap().len();
                         if chunk.offset() != buffer_len as i64 {
                             self.state.payload_buffers.remove(&payload_id);
@@ -693,7 +686,6 @@ impl OutboundRequest {
         let mut file_metadata: Vec<FileMetadata> = vec![];
         let mut transferred_files: HashMap<i64, InternalFileInfo> = HashMap::new();
         let mut total_to_send = 0;
-        // TODO - Handle sending Text
         match &self.payload {
             OutboundPayload::Files(files) => {
                 for f in files {
@@ -811,11 +803,9 @@ impl OutboundRequest {
                 )
                 .await;
 
-                // TODO - Handle sending Text
                 let ids: Vec<i64> = self.state.transferred_files.keys().cloned().collect();
                 info!("We are sending: {:?}", ids);
                 let mut ids_iter = ids.into_iter();
-                // Loop through all files
                 loop {
                     let current = match ids_iter.next() {
                         Some(i) => i,
@@ -829,18 +819,15 @@ impl OutboundRequest {
                             )
                             .await;
                             self.disconnection().await?;
-                            // Breaking instead of NotAnError to allow peacefull termination
                             break;
                         }
                     };
 
-                    // Loop until we reached end of file
                     loop {
                         if self.check_for_cancel().await? {
                             return Err(anyhow!(crate::errors::AppError::NotAnError));
                         }
 
-                        // Workaround to limit scope of the immutable borrow on self
                         let (curr_state, buffer, bytes_read) = {
                             let curr_state = match self.state.transferred_files.get(&current) {
                                 Some(s) => s,
@@ -957,7 +944,6 @@ impl OutboundRequest {
                             self.last_progress_ui_bytes = next_ack_bytes;
                         }
 
-                        // If we just sent the last bytes of the file, mark it as finished
                         if reached_file_end {
                             debug!(
                                 "File {current} finished, curr offset: {} over total: {}",
@@ -975,7 +961,7 @@ impl OutboundRequest {
 										packet_type: Some(PacketType::Data.into()),
 										payload_chunk: Some(PayloadChunk {
 											offset: Some(curr_state.total_size),
-											flags: Some(1), // lastChunk
+											flags: Some(1),
 											body: Some(vec![]),
 										}),
 										payload_header: Some(payload_header),
@@ -1056,7 +1042,6 @@ impl OutboundRequest {
             .ok_or_else(|| anyhow!("Missing required fields"))?;
 
         let mut bytes = vec![0x04];
-        // Ensure no more than 32 bytes for the keys
         if peer_p256_key.x.len() > 32 {
             bytes.extend_from_slice(&peer_p256_key.x[peer_p256_key.x.len() - 32..]);
         } else {
@@ -1174,15 +1159,13 @@ impl OutboundRequest {
             }),
         };
 
-        // Encrypt and send offline
         self.encrypt_and_send(&wrapper).await?;
 
-        // Send lastChunk
         let transfer = PayloadTransferFrame {
             packet_type: Some(PacketType::Data.into()),
             payload_chunk: Some(PayloadChunk {
                 offset: Some(body_size as i64),
-                flags: Some(1), // lastChunk
+                flags: Some(1),
                 body: Some(vec![]),
             }),
             payload_header: Some(payload_header),
@@ -1200,7 +1183,6 @@ impl OutboundRequest {
             }),
         };
 
-        // Encrypt and send offline
         self.encrypt_and_send(&wrapper).await?;
 
         Ok(())
@@ -1271,7 +1253,6 @@ impl OutboundRequest {
     async fn send_frame(&mut self, data: Vec<u8>) -> Result<(), anyhow::Error> {
         let length = data.len();
 
-        // Prepare length prefix in big-endian format
         let length_bytes = [
             (length >> 24) as u8,
             (length >> 16) as u8,
@@ -1331,9 +1312,6 @@ impl OutboundRequest {
             meta: self.state.transfer_metadata.clone(),
             ..Default::default()
         });
-        // Add a small sleep timer to allow the Tokio runtime to have
-        // some spare time to process channel's message. Otherwise it
-        // get spammed by new requests. Currently set to 10 micro secs.
         tokio::time::sleep(SANITY_DURATION).await;
     }
 }

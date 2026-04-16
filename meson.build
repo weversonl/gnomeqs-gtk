@@ -37,26 +37,47 @@ cargo_env.set('CARGO_TARGET_DIR', cargo_target_dir)
 cargo_env.set('GNOMEQS_LOCALE_DIR',
   get_option('prefix') / get_option('localedir'))
 
-# Single custom_target that builds both binaries in one cargo invocation.
-cargo_bins = custom_target(
-  'cargo-build-all',
-  build_by_default: true,
-  build_always_stale: true,
-  output: ['gnomeqs', 'gnomeqs-tray'],
-  console: true,
-  install: true,
-  install_dir: [get_option('bindir'), get_option('bindir')],
-  install_mode: ['rwxr-xr-x', 'rwxr-xr-x'],
-  env: cargo_env,
-  command: [
-    sh, cargo_build_script,
-    cargo.full_path(),
-    meson.project_source_root(),
-    cargo_profile,
-    '@OUTPUT0@',
-    '@OUTPUT1@',
-  ],
-)
+if get_option('tray')
+  # Single custom_target that builds both binaries in one cargo invocation.
+  cargo_bins = custom_target(
+    'cargo-build-all',
+    build_by_default: true,
+    build_always_stale: true,
+    output: ['gnomeqs', 'gnomeqs-tray'],
+    console: true,
+    install: true,
+    install_dir: [get_option('bindir'), get_option('bindir')],
+    install_mode: ['rwxr-xr-x', 'rwxr-xr-x'],
+    env: cargo_env,
+    command: [
+      sh, cargo_build_script,
+      cargo.full_path(),
+      meson.project_source_root(),
+      cargo_profile,
+      '@OUTPUT0@',
+      '@OUTPUT1@',
+    ],
+  )
+else
+  cargo_bins = custom_target(
+    'cargo-build',
+    build_by_default: true,
+    build_always_stale: true,
+    output: ['gnomeqs'],
+    console: true,
+    install: true,
+    install_dir: get_option('bindir'),
+    install_mode: 'rwxr-xr-x',
+    env: cargo_env,
+    command: [
+      sh, cargo_build_script,
+      cargo.full_path(),
+      meson.project_source_root(),
+      cargo_profile,
+      '@OUTPUT0@',
+    ],
+  )
+endif
 
 # Post-install hooks (skipped automatically when DESTDIR is set)
 gnome.post_install(

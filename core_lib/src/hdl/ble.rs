@@ -35,7 +35,6 @@ impl BleListener {
         info!("{INNER_NAME}: service starting");
 
         let mut events = self.adapter.events().await?;
-        // Filter on the NearyShare/QuickShare services UUID
         self.adapter
             .start_scan(ScanFilter {
                 services: vec![SERVICE_UUID_SHARING],
@@ -53,15 +52,11 @@ impl BleListener {
                 Some(e) = events.next() => {
                     match e {
                         CentralEvent::ServiceDataAdvertisement { id, service_data } => {
-                            // Sanity check as per: https://github.com/weversonl/gnomeqs/issues/74
-                            // Seems like the filtering is not enough, so we'll add a check before
-                            // proceeding with the service_data.
                             if !service_data.contains_key(&SERVICE_UUID_SHARING) {
                                 continue;
                             }
 
                             let now = SystemTime::now();
-                            // Don't spam, max once per 30s
                             if now.duration_since(last_alert)? <= Duration::from_secs(30) {
                                 continue;
                             }
@@ -70,10 +65,7 @@ impl BleListener {
                             self.sender.send(())?;
                             last_alert = now;
                         },
-                        // Not interesting for us
-                        _ => {
-                            // trace!("{INNER_NAME}: Another CentralEvent got the same services: {:?}", e);
-                        }
+                        _ => {}
                     }
                 }
             }

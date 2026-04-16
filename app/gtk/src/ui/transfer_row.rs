@@ -203,7 +203,6 @@ impl TransferRow {
                     if p.exists() {
                         gio::File::for_path(p).uri().to_string()
                     } else {
-                        // Fallback: treat as raw path string
                         gio::File::for_path(path).uri().to_string()
                     }
                 };

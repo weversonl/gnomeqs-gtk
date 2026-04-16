@@ -1,0 +1,6 @@
+option(
+  'tray',
+  type: 'boolean',
+  value: true,
+  description: 'Build and install the GTK3 AppIndicator tray helper',
+)

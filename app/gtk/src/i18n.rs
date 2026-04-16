@@ -57,7 +57,6 @@ mod tests {
     }
 }
 
-/// Translate a string using the application's gettext domain.
 #[macro_export]
 macro_rules! tr {
     ($s:literal) => {
