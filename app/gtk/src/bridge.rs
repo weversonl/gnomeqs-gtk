@@ -28,6 +28,7 @@ pub enum ToUi {
     WifiDirectSessionReady(WifiDirectSessionReady),
     ShowWindow,
     ShowWindowOnPage(String),
+    ShowSettings,
     Quit,
 }
 

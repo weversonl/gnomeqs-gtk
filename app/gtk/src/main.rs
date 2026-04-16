@@ -190,7 +190,10 @@ fn main() -> anyhow::Result<()> {
         });
     }
 
-    let app = libadwaita::Application::new(Some(config::APP_ID), gio::ApplicationFlags::empty());
+    let app = libadwaita::Application::new(
+        Some(config::APP_ID),
+        gio::ApplicationFlags::HANDLES_COMMAND_LINE,
+    );
 
     {
         let from_ui_tx = from_ui_tx.clone();
@@ -233,6 +236,46 @@ fn main() -> anyhow::Result<()> {
             let _ = tx.try_send(ToUi::ShowWindowOnPage("send".to_string()));
         });
         app.add_action(&action);
+    }
+    {
+        let tx = to_ui_tx.clone();
+        let action = gio::SimpleAction::new("show-settings", None);
+        action.connect_activate(move |_, _| {
+            let _ = tx.try_send(ToUi::ShowSettings);
+        });
+        app.add_action(&action);
+    }
+
+    {
+        let to_ui_tx = to_ui_tx.clone();
+        app.connect_command_line(move |app, cmdline| {
+            let args = cmdline.arguments();
+            let args: Vec<String> = args
+                .iter()
+                .filter_map(|a| a.to_str().map(|s| s.to_string()))
+                .collect();
+
+            let mut page: Option<String> = None;
+            let mut iter = args.iter().skip(1);
+            while let Some(arg) = iter.next() {
+                if arg == "--page" {
+                    page = iter.next().cloned();
+                } else if let Some(val) = arg.strip_prefix("--page=") {
+                    page = Some(val.to_string());
+                }
+            }
+
+            if let Some(p) = page {
+                if p == "settings" {
+                    let _ = to_ui_tx.try_send(ToUi::ShowSettings);
+                } else {
+                    let _ = to_ui_tx.try_send(ToUi::ShowWindowOnPage(p));
+                }
+            }
+
+            app.activate();
+            0
+        });
     }
 
     let _guard = rt.enter();

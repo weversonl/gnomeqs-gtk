@@ -162,6 +162,7 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
     let send_view_clone = Rc::clone(&send_view);
     let toast_overlay_clone = toast_overlay.clone();
     let stack_clone = stack.clone();
+    let from_ui_tx_clone = state.from_ui_tx.clone();
 
     glib::MainContext::default().spawn_local(async move {
         while let Ok(msg) = rx.recv().await {
@@ -228,6 +229,12 @@ pub fn build_window(app: &libadwaita::Application, state: AppState) -> libadwait
                     stack_clone.set_visible_child_name(&page);
                     win.set_visible(true);
                     win.present();
+                }
+                ToUi::ShowSettings => {
+                    win.set_visible(true);
+                    win.present();
+                    let settings_win = build_settings_window(&win, from_ui_tx_clone.clone());
+                    settings_win.present(Some(&win));
                 }
                 ToUi::Quit => {
                     if let Some(app) = win.application() {

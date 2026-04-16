@@ -10,7 +10,7 @@ Categories=Network;FileTransfer;
 Keywords=share;nearby;file;transfer;quickshare;
 StartupNotify=true
 StartupWMClass=GnomeQS
-Actions=open;receive;send;
+Actions=open;receive;send;settings;
 
 [Desktop Action open]
 Name=Open
@@ -20,9 +20,14 @@ Exec=gnomeqs
 [Desktop Action receive]
 Name=Receive
 Name[pt_BR]=Receber
-Exec=gnomeqs --gapplication-action show-receive
+Exec=gnomeqs --page receive
 
 [Desktop Action send]
 Name=Send
 Name[pt_BR]=Enviar
-Exec=gnomeqs --gapplication-action show-send
+Exec=gnomeqs --page send
+
+[Desktop Action settings]
+Name=Settings
+Name[pt_BR]=Configurações
+Exec=gnomeqs --page settings
