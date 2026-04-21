@@ -334,6 +334,12 @@ msgstr "Tamanho indisponível"
 msgid "Fixed port enabled: {}. Remember to allow it in your firewall."
 msgstr "Porta fixa ativada: {}. Lembre-se de liberá-la no firewall."
 
+msgid "Remember to allow it in your firewall."
+msgstr "Lembre-se de liberá-la no firewall."
+
+msgid "A fixed port makes firewall rules easier."
+msgstr "Uma porta fixa facilita as regras de firewall."
+
 msgid "Random port in use. A fixed port makes firewall rules easier."
 msgstr "Uma porta aleatória está em uso. Uma porta fixa facilita as regras de firewall."
 
@@ -357,3 +363,24 @@ msgstr "Transferência recente"
 
 msgid "Show folder"
 msgstr "Mostrar pasta"
+
+msgid "Ready to"
+msgstr "Pronto para"
+
+msgid "receive"
+msgstr "receber"
+
+msgid "Visible"
+msgstr "Visível"
+
+msgid "Hidden"
+msgstr "Oculto"
+
+msgid "Add Files"
+msgstr "Adicionar arquivos"
+
+msgid "Selected files"
+msgstr "Arquivos selecionados"
+
+msgid "Connection lost during transfer"
+msgstr "Conexão perdida durante a transferência"

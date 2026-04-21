@@ -13,7 +13,7 @@ use crate::settings;
 use crate::tr;
 use crate::transfer_history::{self, HistoryDirection, HistoryEntry};
 use super::cursor::set_pointer_cursor;
-use super::pulse::build_pulse_placeholder;
+use super::pulse::build_pulse_placeholder_sized;
 use super::transfer_row::TransferRow;
 
 pub struct ReceiveView {
@@ -27,8 +27,8 @@ pub struct ReceiveView {
     empty_page: gtk4::Box,
     stack: gtk4::Stack,
     list_scroll: gtk4::ScrolledWindow,
-    vis_row: libadwaita::ActionRow,
-    vis_icon: gtk4::Image,
+    vis_indicator_icon: gtk4::Image,
+    vis_indicator_label: gtk4::Label,
     from_ui_tx: async_channel::Sender<FromUi>,
 }
 
@@ -39,53 +39,76 @@ impl ReceiveView {
     ) -> Self {
         let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
 
-        let vis_group = gtk4::ListBox::new();
-        vis_group.add_css_class("boxed-list");
-        vis_group.add_css_class("glass-card");
-        vis_group.set_selection_mode(gtk4::SelectionMode::None);
-        vis_group.set_margin_top(12);
-        vis_group.set_margin_bottom(6);
-        vis_group.set_margin_start(12);
-        vis_group.set_margin_end(12);
+        // ── Ready-to-receive card ────────────────────────────────
+        let ready_card = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        ready_card.add_css_class("recv-ready-card");
+        ready_card.set_vexpand(true);
+        ready_card.set_margin_top(12);
+        ready_card.set_margin_start(12);
+        ready_card.set_margin_end(12);
+        ready_card.set_margin_bottom(6);
 
-        let vis_row = libadwaita::ActionRow::new();
-        vis_row.set_title(&tr!("Visibility"));
-        vis_row.set_activatable(true);
-        set_pointer_cursor(&vis_row);
+        let pulse = build_pulse_placeholder_sized(None, None, false, Some(240));
+        ready_card.append(&pulse);
 
-        let vis_icon = gtk4::Image::from_icon_name("eye-open-negative-filled-symbolic");
-        vis_icon.set_icon_size(gtk4::IconSize::Normal);
-        vis_icon.set_pixel_size(28);
-        vis_row.add_suffix(&vis_icon);
+        let title_box = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+        title_box.set_halign(gtk4::Align::Center);
+        title_box.set_margin_bottom(12);
 
-        let current_vis = Visibility::from_raw_value(settings::get_visibility_raw() as u64);
-        update_visibility_row(&vis_row, &vis_icon, current_vis);
+        let title_line1 = gtk4::Label::new(Some(&tr!("Ready to")));
+        title_line1.add_css_class("recv-ready-title-plain");
+        title_line1.set_halign(gtk4::Align::Center);
+
+        let title_line2 = gtk4::Label::new(Some(&tr!("receive")));
+        title_line2.add_css_class("recv-ready-title-accent");
+        title_line2.set_halign(gtk4::Align::Center);
+
+        title_box.append(&title_line1);
+        title_box.append(&title_line2);
+        ready_card.append(&title_box);
+
+        // Visibility indicator — clickable pill that toggles Visible ↔ Invisible
+        let vis_indicator = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
+        vis_indicator.add_css_class("recv-vis-indicator");
+        vis_indicator.set_halign(gtk4::Align::Center);
+
+        let vis_indicator_icon = gtk4::Image::from_icon_name("eye-open-negative-filled-symbolic");
+        vis_indicator_icon.set_pixel_size(16);
+        let vis_indicator_label = gtk4::Label::new(None);
+        vis_indicator_label.add_css_class("recv-vis-label");
+        vis_indicator.append(&vis_indicator_icon);
+        vis_indicator.append(&vis_indicator_label);
+
+        let vis_btn = gtk4::Button::new();
+        vis_btn.set_child(Some(&vis_indicator));
+        vis_btn.add_css_class("flat");
+        vis_btn.add_css_class("recv-vis-btn");
+        vis_btn.set_halign(gtk4::Align::Center);
+        vis_btn.set_margin_bottom(20);
+        set_pointer_cursor(&vis_btn);
 
         {
+            let icon = vis_indicator_icon.clone();
+            let label = vis_indicator_label.clone();
             let tx = from_ui_tx.clone();
-            let vis_icon_for_cb = vis_icon.clone();
-            vis_row.connect_activated(move |row| {
-                let current = settings::get_visibility_raw();
-                let new_vis = match current {
-                    0 => Visibility::Invisible,
-                    _ => Visibility::Visible,
+            vis_btn.connect_clicked(move |_| {
+                let current = Visibility::from_raw_value(settings::get_visibility_raw() as u64);
+                let next = match current {
+                    Visibility::Visible    => Visibility::Invisible,
+                    Visibility::Invisible  => Visibility::Visible,
+                    Visibility::Temporarily => Visibility::Visible,
                 };
-                settings::set_visibility_raw(new_vis as i32);
-                update_visibility_row(row, &vis_icon_for_cb, new_vis);
-                if let Err(e) = tx.try_send(FromUi::ChangeVisibility(new_vis)) {
-                    log::warn!("ChangeVisibility send failed: {e}");
-                }
+                settings::set_visibility_raw(next as i32);
+                apply_vis_indicator(&icon, &label, next);
+                let _ = tx.send_blocking(FromUi::ChangeVisibility(next));
             });
         }
+        ready_card.append(&vis_btn);
 
-        vis_group.append(&vis_row);
-        root.append(&vis_group);
-
-        let empty_page = build_pulse_placeholder(
-            Some(&tr!("Ready to receive")),
-            None,
-            false,
-        );
+        // Wrapper so the card sits at top inside the vexpand stack
+        let empty_page = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        empty_page.set_vexpand(true);
+        empty_page.append(&ready_card);
 
         let scroll = gtk4::ScrolledWindow::new();
         scroll.set_vexpand(true);
@@ -156,6 +179,10 @@ impl ReceiveView {
         root.append(&transfer_header);
         root.append(&stack);
 
+        // Apply initial visibility state
+        let init_vis = Visibility::from_raw_value(settings::get_visibility_raw() as u64);
+        apply_vis_indicator(&vis_indicator_icon, &vis_indicator_label, init_vis);
+
         Self {
             root,
             transfers: Rc::new(RefCell::new(HashMap::new())),
@@ -167,8 +194,8 @@ impl ReceiveView {
             empty_page,
             stack,
             list_scroll: scroll,
-            vis_row,
-            vis_icon,
+            vis_indicator_icon,
+            vis_indicator_label,
             from_ui_tx,
         }
     }
@@ -244,31 +271,30 @@ impl ReceiveView {
     }
 
     pub fn update_visibility(&self, vis: Visibility) {
-        settings::set_visibility_raw(vis as i32);
-        update_visibility_row(&self.vis_row, &self.vis_icon, vis);
+        apply_vis_indicator(&self.vis_indicator_icon, &self.vis_indicator_label, vis);
     }
 }
 
-fn update_visibility_row(row: &libadwaita::ActionRow, icon: &gtk4::Image, vis: Visibility) {
+fn apply_vis_indicator(icon: &gtk4::Image, label: &gtk4::Label, vis: Visibility) {
     icon.remove_css_class("visibility-visible");
     icon.remove_css_class("visibility-hidden");
     icon.remove_css_class("visibility-temporary");
 
     match vis {
         Visibility::Visible => {
-            row.set_subtitle(&tr!("Always visible"));
             icon.set_icon_name(Some("eye-open-negative-filled-symbolic"));
             icon.add_css_class("visibility-visible");
+            label.set_text(&tr!("Visible"));
         }
         Visibility::Invisible => {
-            row.set_subtitle(&tr!("Hidden from everyone"));
             icon.set_icon_name(Some("eye-not-looking-symbolic"));
             icon.add_css_class("visibility-hidden");
+            label.set_text(&tr!("Hidden"));
         }
         Visibility::Temporarily => {
-            row.set_subtitle(&tr!("Temporarily visible"));
             icon.set_icon_name(Some("eye-open-negative-filled-symbolic"));
             icon.add_css_class("visibility-temporary");
+            label.set_text(&tr!("Temporarily visible"));
         }
     }
 }

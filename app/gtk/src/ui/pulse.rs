@@ -10,6 +10,15 @@ pub fn build_pulse_placeholder(
     description: Option<&str>,
     compact: bool,
 ) -> gtk4::Box {
+    build_pulse_placeholder_sized(title, description, compact, None)
+}
+
+pub fn build_pulse_placeholder_sized(
+    title: Option<&str>,
+    description: Option<&str>,
+    compact: bool,
+    size_override: Option<i32>,
+) -> gtk4::Box {
     let root = gtk4::Box::new(gtk4::Orientation::Vertical, if compact { 10 } else { 18 });
     root.set_hexpand(true);
     root.set_vexpand(true);
@@ -17,7 +26,8 @@ pub fn build_pulse_placeholder(
     root.set_valign(gtk4::Align::Center);
     root.add_css_class("status-page");
 
-    let pulse = PulseWidget::new(if compact { 120 } else { 180 });
+    let default_size = if compact { 120 } else { 180 };
+    let pulse = PulseWidget::new(size_override.unwrap_or(default_size));
     root.append(&pulse.area);
 
     if let Some(title) = title {
@@ -80,24 +90,26 @@ impl PulseWidget {
                 let (ambient_r, ambient_g, ambient_b, ambient_a) = if is_light {
                     (0.51, 0.43, 0.92, 0.05)
                 } else {
-                    (1.0, 1.0, 1.0, 0.06)
+                    // #6E63E8 — roxo azulado
+                    (0.431, 0.388, 0.910, 0.08)
                 };
                 let (ring_r, ring_g, ring_b, ring_alpha_scale) = if is_light {
                     (0.45, 0.37, 0.86, 0.12)
                 } else {
-                    (1.0, 1.0, 1.0, 0.18)
+                    // #A7A5FF — lilás neon
+                    (0.655, 0.647, 1.0, 0.22)
                 };
-                // teal tint in dark mode, purple in light mode
+                // #A7A5FF core em dark, roxo em light
                 let (core_r, core_g, core_b, core_a) = if is_light {
                     (0.46, 0.39, 0.88, 0.92)
                 } else {
-                    (0.74, 0.94, 0.98, 0.96)
+                    (0.655, 0.647, 1.0, 0.96)
                 };
-                // orbit particle color: slightly different tint
+                // #D9D8FF — lavanda clara para as partículas
                 let (orb_r, orb_g, orb_b) = if is_light {
                     (0.50, 0.42, 0.90)
                 } else {
-                    (0.80, 0.96, 1.00)
+                    (0.851, 0.847, 1.000)
                 };
 
                 cr.set_source_rgba(ambient_r, ambient_g, ambient_b, ambient_a);

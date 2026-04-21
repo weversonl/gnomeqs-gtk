@@ -1,0 +1,13 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- folder back / tab -->
+  <path d="M3 9C3 7.895 3.895 7 5 7H10L12 9H19C20.105 9 21 9.895 21 11V18C21 19.105 20.105 20 19 20H5C3.895 20 3 19.105 3 18V9Z"
+        fill="currentColor" fill-opacity="0.50"/>
+  <!-- folder front highlight line -->
+  <rect x="3" y="10" width="18" height="10" rx="2"
+        fill="currentColor" fill-opacity="0.22"/>
+  <!-- upload arrow -->
+  <path d="M12 17V13"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M9.5 15L12 12.5L14.5 15"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

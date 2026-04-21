@@ -22,11 +22,11 @@ impl DeviceTile {
 
         let name = endpoint.name.clone().unwrap_or_else(|| endpoint.id.clone());
 
-        let vbox = gtk4::Box::new(gtk4::Orientation::Vertical, 8);
+        let vbox = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
         vbox.set_margin_top(12);
         vbox.set_margin_bottom(12);
-        vbox.set_margin_start(16);
-        vbox.set_margin_end(16);
+        vbox.set_margin_start(10);
+        vbox.set_margin_end(10);
         vbox.set_halign(gtk4::Align::Center);
         vbox.set_hexpand(false);
         vbox.set_vexpand(false);
@@ -34,23 +34,23 @@ impl DeviceTile {
 
         let icon = gtk4::Image::from_icon_name(icon_name);
         icon.set_icon_size(gtk4::IconSize::Large);
-        icon.set_pixel_size(40);
-        icon.set_margin_top(10);
-        icon.set_margin_bottom(10);
-        icon.set_margin_start(10);
-        icon.set_margin_end(10);
+        icon.set_pixel_size(44);
+        icon.set_margin_top(12);
+        icon.set_margin_bottom(12);
+        icon.set_margin_start(12);
+        icon.set_margin_end(12);
 
         let icon_circle = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         icon_circle.add_css_class("device-icon-circle");
         icon_circle.set_halign(gtk4::Align::Center);
         icon_circle.set_valign(gtk4::Align::Center);
-        icon_circle.set_size_request(62, 62);
+        icon_circle.set_size_request(82, 82);
         icon_circle.append(&icon);
 
         let label = gtk4::Label::new(Some(&name));
         label.add_css_class("device-tile-title");
         label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
-        label.set_max_width_chars(14);
+        label.set_max_width_chars(12);
         label.set_halign(gtk4::Align::Center);
         label.set_justify(gtk4::Justification::Center);
         label.set_wrap(true);
@@ -60,16 +60,6 @@ impl DeviceTile {
             Some(EndpointTransport::WifiDirectPeer) => tr!("Wi-Fi Direct"),
             _ => tr!("Wi-Fi"),
         };
-        let status_text = match endpoint.transport {
-            Some(EndpointTransport::WifiDirectPeer) => tr!("Experimental"),
-            _ => endpoint.ip.clone().unwrap_or_else(|| tr!("Ready")),
-        };
-
-        let meta = gtk4::Label::new(Some(&status_text));
-        meta.add_css_class("device-tile-meta");
-        meta.set_ellipsize(gtk4::pango::EllipsizeMode::End);
-        meta.set_max_width_chars(16);
-        meta.set_halign(gtk4::Align::Center);
 
         let transport_badge = gtk4::Label::new(Some(&transport_text));
         transport_badge.add_css_class("device-transport-badge");
@@ -85,7 +75,6 @@ impl DeviceTile {
 
         vbox.append(&icon_circle);
         vbox.append(&label);
-        vbox.append(&meta);
         vbox.append(&transport_badge);
 
         let button = gtk4::Button::new();
@@ -96,7 +85,7 @@ impl DeviceTile {
         button.set_valign(gtk4::Align::Start);
         button.set_hexpand(false);
         button.set_vexpand(false);
-        button.set_size_request(150, 150);
+        button.set_size_request(96, -1);
 
         let interactive = match endpoint.transport {
             Some(EndpointTransport::WifiDirectPeer) => true,

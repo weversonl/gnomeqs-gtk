@@ -295,14 +295,17 @@ fn build_network_group(win: &libadwaita::PreferencesDialog) -> libadwaita::Prefe
         0,
     );
     port_row.set_title(&tr!("Port"));
-    port_row.set_subtitle(&tr!("Restart required to apply"));
+    port_row.set_subtitle(&build_port_subtitle());
     set_pointer_cursor(&port_row);
     gsettings.bind("port", &port_row, "value").build();
 
     {
         let win_ref = win.clone();
+        let port_row_ref = port_row.clone();
         let pending_toast: Rc<RefCell<Option<glib::SourceId>>> = Rc::new(RefCell::new(None));
         port_row.connect_value_notify(move |_| {
+            port_row_ref.set_subtitle(&build_port_subtitle());
+
             if let Some(source) = pending_toast.borrow_mut().take() {
                 source.remove();
             }
@@ -416,4 +419,12 @@ fn register_window_actions(
     });
     group.add_action(&action);
     win.insert_action_group("win", Some(&group));
+}
+
+fn build_port_subtitle() -> String {
+    let note = match settings::get_port() {
+        Some(_) => tr!("Remember to allow it in your firewall."),
+        None => tr!("A fixed port makes firewall rules easier."),
+    };
+    format!("{}\n{}", tr!("Restart required to apply"), note)
 }

@@ -23,7 +23,7 @@ use super::transfer_row::TransferRow;
 
 pub struct SendView {
     pub root: gtk4::Box,
-    devices_box: gtk4::FlowBox,
+    devices_box: gtk4::Box,
     selected_files: Rc<RefCell<Vec<String>>>,
     from_ui_tx: async_channel::Sender<FromUi>,
     devices: Rc<RefCell<HashMap<String, DeviceTile>>>,
@@ -107,31 +107,25 @@ impl SendView {
         files_group.set_margin_end(12);
         files_group.set_valign(gtk4::Align::Start);
 
-        let upload_icon = gtk4::Image::from_icon_name("io.github.weversonl.GnomeQuickShare-airdrop-symbolic");
+        let upload_icon = gtk4::Image::from_icon_name("io.github.weversonl.GnomeQuickShare-upload-symbolic");
         upload_icon.add_css_class("send-drop-icon");
         upload_icon.set_halign(gtk4::Align::Center);
+        upload_icon.set_pixel_size(56);
+        upload_icon.set_margin_top(14);
+        upload_icon.set_margin_bottom(10);
 
-        let files_title = gtk4::Label::new(Some(&tr!("Drop files to send")));
-        files_title.add_css_class("send-drop-title");
-        files_title.set_halign(gtk4::Align::Center);
-
-        let files_subtitle = gtk4::Label::new(Some(&tr!("Select")));
-        files_subtitle.add_css_class("send-drop-subtitle");
-        files_subtitle.set_halign(gtk4::Align::Center);
+        let select_btn = gtk4::Button::with_label(&tr!("Add Files"));
+        select_btn.add_css_class("send-select-button");
+        select_btn.set_halign(gtk4::Align::Center);
+        set_pointer_cursor(&select_btn);
 
         let files_meta = gtk4::Label::new(Some(&tr!("Drop files here or use Select")));
         files_meta.add_css_class("send-drop-meta");
         files_meta.set_halign(gtk4::Align::Center);
+        files_meta.set_margin_top(6);
+        files_meta.set_margin_bottom(16);
 
-        let actions = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
-        actions.set_halign(gtk4::Align::Center);
-
-        let select_btn = gtk4::Button::with_label(&tr!("Select"));
-        select_btn.add_css_class("send-select-button");
-        select_btn.set_valign(gtk4::Align::Center);
-        set_pointer_cursor(&select_btn);
-        actions.append(&select_btn);
-
+        // clear button lives in the selected_section header, not in the drop zone
         let clear_files_btn = gtk4::Button::from_icon_name("user-trash-symbolic");
         clear_files_btn.add_css_class("flat");
         clear_files_btn.add_css_class("clear-files-button");
@@ -139,25 +133,41 @@ impl SendView {
         clear_files_btn.set_visible(false);
         clear_files_btn.set_tooltip_text(Some(&tr!("Clear")));
         set_pointer_cursor(&clear_files_btn);
-        actions.append(&clear_files_btn);
-
-        let selected_files_flow = gtk4::FlowBox::new();
-        selected_files_flow.set_selection_mode(gtk4::SelectionMode::None);
-        selected_files_flow.set_halign(gtk4::Align::Start);
-        selected_files_flow.set_valign(gtk4::Align::Start);
-        selected_files_flow.set_max_children_per_line(8);
-        selected_files_flow.set_min_children_per_line(1);
-        selected_files_flow.set_column_spacing(8);
-        selected_files_flow.set_row_spacing(8);
-        selected_files_flow.set_visible(false);
 
         files_group.append(&upload_icon);
-        files_group.append(&files_title);
-        files_group.append(&files_subtitle);
+        files_group.append(&select_btn);
         files_group.append(&files_meta);
-        files_group.append(&actions);
-        files_group.append(&selected_files_flow);
         content.append(&files_group);
+
+        // Selected files section — lives OUTSIDE the drop zone card
+        let selected_section = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+        selected_section.set_margin_start(12);
+        selected_section.set_margin_end(12);
+        selected_section.set_margin_top(0);
+        selected_section.set_visible(false);
+
+        let selected_files_header = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
+        selected_files_header.set_margin_top(6);
+        selected_files_header.set_margin_start(2);
+        selected_files_header.set_margin_end(2);
+
+        let selected_files_heading = gtk4::Label::new(Some(&tr!("Selected files")));
+        selected_files_heading.add_css_class("caption-heading");
+        selected_files_heading.set_halign(gtk4::Align::Start);
+        selected_files_heading.set_hexpand(true);
+        selected_files_header.append(&selected_files_heading);
+        selected_files_header.append(&clear_files_btn);
+
+        let selected_files_flow = gtk4::ListBox::new();
+        selected_files_flow.set_selection_mode(gtk4::SelectionMode::None);
+        selected_files_flow.add_css_class("boxed-list");
+        selected_files_flow.add_css_class("glass-card");
+        selected_files_flow.add_css_class("selected-files-list");
+        selected_files_flow.set_margin_bottom(6);
+
+        selected_section.append(&selected_files_header);
+        selected_section.append(&selected_files_flow);
+        content.append(&selected_section);
 
         let transfer_header = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
         transfer_header.set_margin_top(2);
@@ -214,18 +224,18 @@ impl SendView {
 
         {
             let selected_files = Rc::clone(&selected_files);
-            let files_subtitle_clone = files_subtitle.clone();
             let files_meta_clone = files_meta.clone();
             let clear_btn_clone = clear_files_btn.clone();
             let selected_files_flow_clone = selected_files_flow.clone();
             let upload_icon_clone = upload_icon.clone();
+            let selected_section_clone = selected_section.clone();
             select_btn.connect_clicked(move |btn| {
                 let files_ref = Rc::clone(&selected_files);
-                let subtitle_ref = files_subtitle_clone.clone();
                 let meta_ref = files_meta_clone.clone();
                 let clear_ref = clear_btn_clone.clone();
                 let flow_ref = selected_files_flow_clone.clone();
                 let upload_icon_ref = upload_icon_clone.clone();
+                let section_ref = selected_section_clone.clone();
 
                 let window = btn.root().and_downcast::<gtk4::Window>();
                 let dialog = gtk4::FileDialog::new();
@@ -252,10 +262,10 @@ impl SendView {
                                 rebuild_selected_files_ui(
                                     &files_ref,
                                     &flow_ref,
-                                    &subtitle_ref,
                                     &meta_ref,
                                     &clear_ref,
                                     &upload_icon_ref,
+                                    &section_ref,
                                 );
                             }
                         }
@@ -266,19 +276,19 @@ impl SendView {
 
         {
             let selected_files = Rc::clone(&selected_files);
-            let files_subtitle_clone = files_subtitle.clone();
             let files_meta_clone = files_meta.clone();
             let selected_files_flow_clone = selected_files_flow.clone();
             let upload_icon_clone = upload_icon.clone();
+            let selected_section_clone = selected_section.clone();
             clear_files_btn.connect_clicked(move |btn| {
                 *selected_files.borrow_mut() = Vec::new();
                 rebuild_selected_files_ui(
                     &selected_files,
                     &selected_files_flow_clone,
-                    &files_subtitle_clone,
                     &files_meta_clone,
                     btn,
                     &upload_icon_clone,
+                    &selected_section_clone,
                 );
             });
         }
@@ -289,12 +299,12 @@ impl SendView {
         );
         {
             let selected_files = Rc::clone(&selected_files);
-            let files_subtitle_clone = files_subtitle.clone();
             let files_meta_clone = files_meta.clone();
             let clear_btn_clone = clear_files_btn.clone();
             let selected_files_flow_clone = selected_files_flow.clone();
             let upload_icon_clone = upload_icon.clone();
             let files_group_for_drop = files_group.clone();
+            let selected_section_clone = selected_section.clone();
             drop_target.connect_drop(move |_, value, _, _| {
                 files_group_for_drop.remove_css_class("send-drop-active");
                 if let Ok(file) = value.get::<gio::File>() {
@@ -304,10 +314,10 @@ impl SendView {
                         rebuild_selected_files_ui(
                             &selected_files,
                             &selected_files_flow_clone,
-                            &files_subtitle_clone,
                             &files_meta_clone,
                             &clear_btn_clone,
                             &upload_icon_clone,
+                            &selected_section_clone,
                         );
                         return true;
                     }
@@ -356,35 +366,19 @@ impl SendView {
         devices_header.append(&refresh_btn);
         devices_card.append(&devices_header);
 
-        let network_summary = gtk4::Box::new(gtk4::Orientation::Vertical, 2);
-        network_summary.add_css_class("network-summary-card");
-        let network_summary_title = gtk4::Label::new(Some(&tr!("Network status")));
-        network_summary_title.add_css_class("network-summary-title");
-        network_summary_title.set_halign(gtk4::Align::Start);
-        let network_summary_subtitle = gtk4::Label::new(Some(&build_network_summary_text()));
-        network_summary_subtitle.add_css_class("network-summary-subtitle");
-        network_summary_subtitle.set_wrap(true);
-        network_summary_subtitle.set_wrap_mode(gtk4::pango::WrapMode::WordChar);
-        network_summary_subtitle.set_halign(gtk4::Align::Start);
-        network_summary_subtitle.set_xalign(0.0);
-        network_summary.append(&network_summary_title);
-        network_summary.append(&network_summary_subtitle);
-        devices_card.append(&network_summary);
 
         let scroll = gtk4::ScrolledWindow::new();
-        scroll.set_vexpand(true);
-        scroll.set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
+        scroll.set_vexpand(false);
+        scroll.set_policy(gtk4::PolicyType::Automatic, gtk4::PolicyType::Never);
+        scroll.set_propagate_natural_height(true);
 
-        let devices_box = gtk4::FlowBox::new();
-        devices_box.set_selection_mode(gtk4::SelectionMode::None);
+        let devices_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 12);
         devices_box.set_valign(gtk4::Align::Start);
         devices_box.set_halign(gtk4::Align::Start);
         devices_box.set_margin_top(6);
         devices_box.set_margin_bottom(12);
         devices_box.set_margin_start(6);
         devices_box.set_margin_end(6);
-        devices_box.set_column_spacing(12);
-        devices_box.set_row_spacing(12);
         scroll.set_child(Some(&devices_box));
 
         let devices_placeholder = build_pulse_placeholder(None, Some(&tr!("Nearby devices")), false);
@@ -392,8 +386,8 @@ impl SendView {
         devices_placeholder.set_margin_bottom(12);
 
         let devices_stack = gtk4::Stack::new();
-        devices_stack.set_vexpand(true);
-        devices_stack.set_size_request(-1, 240);
+        devices_stack.set_vexpand(false);
+        devices_stack.set_size_request(-1, 160);
         devices_stack.add_child(&devices_placeholder);
         devices_stack.add_child(&scroll);
         devices_stack.set_visible_child(&devices_placeholder);
@@ -462,6 +456,7 @@ impl SendView {
             }
             return;
         }
+
 
         let is_wifi_direct_peer = matches!(info.transport, Some(EndpointTransport::WifiDirectPeer));
         if !is_wifi_direct_peer && (info.ip.is_none() || info.port.is_none()) {
@@ -883,15 +878,6 @@ fn normalize_device_name(name: &str) -> String {
     name.trim().to_lowercase()
 }
 
-fn build_network_summary_text() -> String {
-    let port_summary = match settings::get_port() {
-        Some(port) => tr!("Fixed port enabled: {}. Remember to allow it in your firewall.")
-            .replace("{}", &port.to_string()),
-        None => tr!("Random port in use. A fixed port makes firewall rules easier."),
-    };
-
-    port_summary
-}
 
 fn history_allows_retry(subtitle: &str) -> bool {
     matches!(
@@ -1050,11 +1036,11 @@ fn prepend_history_row(
 
 fn rebuild_selected_files_ui(
     selected_files: &Rc<RefCell<Vec<String>>>,
-    flow: &gtk4::FlowBox,
-    subtitle: &gtk4::Label,
+    flow: &gtk4::ListBox,
     meta: &gtk4::Label,
     clear_btn: &gtk4::Button,
     upload_icon: &gtk4::Image,
+    selected_section: &gtk4::Box,
 ) {
     while let Some(child) = flow.first_child() {
         flow.remove(&child);
@@ -1064,22 +1050,16 @@ fn rebuild_selected_files_ui(
     let count = files.len();
 
     if count == 0 {
-        subtitle.set_text(&tr!("Select"));
         meta.set_text(&tr!("Drop files here or use Select"));
         clear_btn.set_visible(false);
-        flow.set_visible(false);
         upload_icon.set_visible(true);
+        selected_section.set_visible(false);
         return;
     }
 
-    subtitle.set_text(&format!(
-        "{count} {}",
-        if count == 1 { tr!("file") } else { tr!("files") }
-    ));
-    meta.set_text(&format_total_selected_size(&files));
     clear_btn.set_visible(true);
-    flow.set_visible(true);
-    upload_icon.set_visible(false);
+    upload_icon.set_visible(true);
+    selected_section.set_visible(true);
 
     for (index, path) in files.iter().enumerate() {
         let file_name = Path::new(path)
@@ -1087,42 +1067,69 @@ fn rebuild_selected_files_ui(
             .and_then(|s| s.to_str())
             .unwrap_or(path)
             .to_string();
+        let file_size = std::fs::metadata(path)
+            .map(|m| format_size(m.len()))
+            .unwrap_or_default();
 
-        let tile = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
-        tile.add_css_class("selected-file-tile");
-        tile.set_size_request(52, 52);
-        tile.set_halign(gtk4::Align::Center);
-        tile.set_valign(gtk4::Align::Center);
-        tile.set_tooltip_text(Some(&file_name));
-        tile.set_hexpand(true);
-        tile.set_vexpand(true);
-        tile.set_homogeneous(true);
+        let row = gtk4::ListBoxRow::new();
+        row.add_css_class("selected-file-row");
+        row.set_activatable(false);
+
+        let body = gtk4::Box::new(gtk4::Orientation::Horizontal, 12);
+        body.set_margin_top(10);
+        body.set_margin_bottom(10);
+        body.set_margin_start(12);
+        body.set_margin_end(10);
 
         let icon = gtk4::Image::from_icon_name(file_icon_name(path));
-        icon.add_css_class("selected-file-tile-icon");
-        icon.set_icon_size(gtk4::IconSize::Large);
+        icon.set_pixel_size(22);
         icon.set_halign(gtk4::Align::Center);
         icon.set_valign(gtk4::Align::Center);
-        icon.set_hexpand(true);
-        icon.set_vexpand(true);
-        tile.append(&icon);
+        icon.set_margin_top(10);
+        icon.set_margin_bottom(10);
+        icon.set_margin_start(10);
+        icon.set_margin_end(10);
+        let icon_chip = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        icon_chip.add_css_class("send-file-icon-chip");
+        icon_chip.set_valign(gtk4::Align::Center);
+        icon_chip.set_halign(gtk4::Align::Center);
+        icon_chip.set_size_request(42, 42);
+        icon_chip.append(&icon);
+        body.append(&icon_chip);
+
+        let text_box = gtk4::Box::new(gtk4::Orientation::Vertical, 2);
+        text_box.set_hexpand(true);
+        text_box.set_valign(gtk4::Align::Center);
+
+        let name_lbl = gtk4::Label::new(Some(&file_name));
+        name_lbl.add_css_class("selected-file-row-name");
+        name_lbl.set_halign(gtk4::Align::Start);
+        name_lbl.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+        name_lbl.set_max_width_chars(28);
+
+        let size_lbl = gtk4::Label::new(Some(&file_size));
+        size_lbl.add_css_class("selected-file-row-size");
+        size_lbl.set_halign(gtk4::Align::Start);
+
+        text_box.append(&name_lbl);
+        if !file_size.is_empty() {
+            text_box.append(&size_lbl);
+        }
+        body.append(&text_box);
 
         let remove_btn = gtk4::Button::from_icon_name("window-close-symbolic");
-        remove_btn.add_css_class("selected-file-remove-badge");
+        remove_btn.add_css_class("flat");
+        remove_btn.set_valign(gtk4::Align::Center);
         remove_btn.set_tooltip_text(Some(&tr!("Remove")));
-        remove_btn.set_halign(gtk4::Align::End);
-        remove_btn.set_valign(gtk4::Align::Start);
-        remove_btn.set_margin_top(0);
-        remove_btn.set_margin_end(0);
         set_pointer_cursor(&remove_btn);
 
         {
             let selected_files = Rc::clone(selected_files);
             let flow = flow.clone();
-            let subtitle = subtitle.clone();
             let meta = meta.clone();
             let clear_btn = clear_btn.clone();
             let upload_icon = upload_icon.clone();
+            let selected_section = selected_section.clone();
             remove_btn.connect_clicked(move |_| {
                 let len = selected_files.borrow().len();
                 if index < len {
@@ -1130,26 +1137,18 @@ fn rebuild_selected_files_ui(
                     rebuild_selected_files_ui(
                         &selected_files,
                         &flow,
-                        &subtitle,
                         &meta,
                         &clear_btn,
                         &upload_icon,
+                        &selected_section,
                     );
                 }
             });
         }
 
-        let overlay = gtk4::Overlay::new();
-        overlay.add_css_class("selected-file-overlay");
-        overlay.set_size_request(56, 56);
-        overlay.set_halign(gtk4::Align::Start);
-        overlay.set_valign(gtk4::Align::Start);
-        overlay.set_tooltip_text(Some(&file_name));
-        overlay.set_child(Some(&tile));
-        overlay.add_overlay(&remove_btn);
-        overlay.set_measure_overlay(&remove_btn, true);
-
-        flow.insert(&overlay, -1);
+        body.append(&remove_btn);
+        row.set_child(Some(&body));
+        flow.append(&row);
     }
 }
 
@@ -1170,19 +1169,6 @@ fn file_icon_name(path: &str) -> &'static str {
     }
 }
 
-fn format_total_selected_size(files: &[String]) -> String {
-    let total_bytes = files
-        .iter()
-        .filter_map(|path| std::fs::metadata(path).ok())
-        .map(|meta| meta.len())
-        .sum::<u64>();
-
-    if total_bytes == 0 {
-        return tr!("Size unavailable");
-    }
-
-    format_size(total_bytes)
-}
 
 fn format_size(bytes: u64) -> String {
     const KB: f64 = 1024.0;
