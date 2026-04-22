@@ -339,7 +339,7 @@ pub fn build_window(
                 }
                 ToUi::BleNearby => {
                     let toast = libadwaita::Toast::new(
-                        "A nearby device wants to share. Tap to become visible.",
+                        &tr!("A nearby device wants to share. Tap to become visible."),
                     );
                     toast_overlay_clone.add_toast(toast);
                 }
@@ -932,8 +932,6 @@ pub fn apply_custom_css() {
   letter-spacing: 0.02em;
   padding: 3px 9px;
   border-radius: 999px;
-  margin-left: 2px;
-  margin-right: 8px;
 }
 .app-window.dark-mode .risk-badge {
   color: #FFE7A3;
@@ -1433,7 +1431,7 @@ fn install_responsive_classes(win: &libadwaita::ApplicationWindow) {
 fn send_notification(app: Option<&libadwaita::Application>, sender_name: &str, transfer_id: &str) {
     let Some(app) = app else { return };
     let n = gio::Notification::new("GnomeQS");
-    n.set_body(Some(&format!("{sender_name} wants to share")));
+    n.set_body(Some(&format!("{sender_name} {}", tr!("wants to share"))));
 
     let id_variant = glib::Variant::from(transfer_id);
     n.add_button_with_target_value(&tr!("Accept"), "app.accept-transfer", Some(&id_variant));

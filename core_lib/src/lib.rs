@@ -69,6 +69,7 @@ pub struct RQS {
     visibility_receiver: watch::Receiver<Visibility>,
 
     ble_sender: broadcast::Sender<()>,
+    mdns_reset_sender: broadcast::Sender<()>,
 
     port_number: Option<u32>,
 
@@ -94,6 +95,7 @@ impl RQS {
         let (message_sender, _) = broadcast::channel(50);
         let (cancel_sender, _) = broadcast::channel(32);
         let (ble_sender, _) = broadcast::channel(5);
+        let (mdns_reset_sender, _) = broadcast::channel(4);
 
         let (visibility_sender, visibility_receiver) = watch::channel(Visibility::Invisible);
         let _ = visibility_sender.send(visibility);
@@ -105,6 +107,7 @@ impl RQS {
             visibility_sender: Arc::new(Mutex::new(visibility_sender)),
             visibility_receiver,
             ble_sender,
+            mdns_reset_sender,
             port_number,
             message_sender,
             cancel_sender,
@@ -135,7 +138,7 @@ impl RQS {
             tcp_listener,
             self.message_sender.clone(),
             self.cancel_sender.clone(),
-            self.ble_sender.clone(),
+            self.mdns_reset_sender.clone(),
             send_channel.1,
             self.visibility_receiver.clone(),
         )?;
@@ -154,6 +157,7 @@ impl RQS {
             endpoint_id[..4].try_into()?,
             binded_addr.port(),
             self.ble_sender.subscribe(),
+            self.mdns_reset_sender.subscribe(),
             self.visibility_sender.clone(),
             self.visibility_receiver.clone(),
         )?;

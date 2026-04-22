@@ -1,6 +1,6 @@
 project(
   'gnome-quick-share',
-  version: '1.3.0',
+  version: '1.4.0',
   license: 'AGPL-3.0-only',
   meson_version: '>= 1.0',
 )

@@ -781,7 +781,7 @@ impl InboundRequest {
 
         match self.state.state {
             State::SentConnectionResponse => {
-                debug!("Processing State::SentConnectionResponse");
+                debug!("Processing State::SentConnectionResponse (frame={:?})", v1_frame.r#type());
                 self.process_paired_key_encryption_frame(v1_frame).await?;
                 self.update_state(
                     |e| {
@@ -792,7 +792,7 @@ impl InboundRequest {
                 .await;
             }
             State::SentPairedKeyResult => {
-                debug!("Processing State::SentPairedKeyResult");
+                debug!("Processing State::SentPairedKeyResult (frame={:?})", v1_frame.r#type());
                 self.process_paired_key_result(v1_frame).await?;
                 self.update_state(
                     |e| {
@@ -804,7 +804,28 @@ impl InboundRequest {
             }
             State::ReceivedPairedKeyResult => {
                 debug!("Processing State::ReceivedPairedKeyResult");
-                self.process_introduction(v1_frame).await?;
+                match v1_frame.r#type() {
+                    sharing_nearby::v1_frame::FrameType::Introduction => {
+                        self.process_introduction(v1_frame).await?;
+                    }
+                    sharing_nearby::v1_frame::FrameType::PairedKeyEncryption => {
+                        debug!("ReceivedPairedKeyResult: got PairedKeyEncryption, sending PairedKeyResult");
+                        let paired_result = sharing_nearby::Frame {
+                            version: Some(sharing_nearby::frame::Version::V1.into()),
+                            v1: Some(sharing_nearby::V1Frame {
+                                r#type: Some(sharing_nearby::v1_frame::FrameType::PairedKeyResult.into()),
+                                paired_key_result: Some(sharing_nearby::PairedKeyResultFrame {
+                                    status: Some(crate::sharing_nearby::paired_key_result_frame::Status::Unable.into()),
+                                }),
+                                ..Default::default()
+                            }),
+                        };
+                        self.send_encrypted_frame(&paired_result).await?;
+                    }
+                    other => {
+                        debug!("ReceivedPairedKeyResult: ignoring unexpected frame {:?}, waiting for Introduction", other);
+                    }
+                }
             }
             _ => {
                 debug!(

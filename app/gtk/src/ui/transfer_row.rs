@@ -4,7 +4,6 @@ use std::rc::Rc;
 
 use gtk4::gdk;
 use gtk4::prelude::*;
-use libadwaita::prelude::*;
 
 use super::cursor::set_pointer_cursor;
 use crate::bridge::FromUi;
@@ -13,8 +12,10 @@ use gnomeqs_core::{DeviceType, State};
 use gnomeqs_core::{TransferMetadata, TransferRiskLevel};
 
 pub struct TransferRow {
-    pub row: libadwaita::ActionRow,
+    pub row: gtk4::ListBoxRow,
     pub icon: gtk4::Image,
+    pub title_label: gtk4::Label,
+    pub subtitle_label: gtk4::Label,
     pub risk_label: gtk4::Label,
     pub progress_bar: gtk4::ProgressBar,
     pub pin_label: gtk4::Label,
@@ -36,22 +37,44 @@ pub struct TransferRow {
 
 impl TransferRow {
     pub fn new(id: String, from_ui_tx: async_channel::Sender<FromUi>) -> Self {
-        let row = libadwaita::ActionRow::new();
+        let row = gtk4::ListBoxRow::new();
         row.set_activatable(false);
         row.add_css_class("transfer-row");
-        row.set_title_lines(3);
-        row.set_subtitle_lines(3);
 
         let icon = gtk4::Image::from_icon_name("computer-symbolic");
         icon.set_icon_size(gtk4::IconSize::Large);
-        row.add_prefix(&icon);
+        icon.set_valign(gtk4::Align::Center);
+        icon.set_margin_end(8);
+
+        let title_label = gtk4::Label::new(None);
+        title_label.add_css_class("title");
+        title_label.set_halign(gtk4::Align::Start);
+        title_label.set_xalign(0.0);
+        title_label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+        title_label.set_lines(2);
+        title_label.set_wrap(true);
+
+        let subtitle_label = gtk4::Label::new(None);
+        subtitle_label.add_css_class("subtitle");
+        subtitle_label.set_halign(gtk4::Align::Start);
+        subtitle_label.set_xalign(0.0);
+        subtitle_label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+        subtitle_label.set_lines(3);
+        subtitle_label.set_wrap(true);
 
         let risk_label = gtk4::Label::new(None);
         risk_label.add_css_class("risk-badge");
         risk_label.set_halign(gtk4::Align::Start);
         risk_label.set_valign(gtk4::Align::Center);
+        risk_label.set_margin_top(4);
         risk_label.set_visible(false);
-        row.add_prefix(&risk_label);
+
+        let text_box = gtk4::Box::new(gtk4::Orientation::Vertical, 2);
+        text_box.set_valign(gtk4::Align::Center);
+        text_box.set_hexpand(true);
+        text_box.append(&title_label);
+        text_box.append(&subtitle_label);
+        text_box.append(&risk_label);
 
         let pin_label = gtk4::Label::new(None);
         pin_label.add_css_class("pin-badge");
@@ -142,7 +165,17 @@ impl TransferRow {
         action_stack.set_width_request(104);
         action_stack.append(&info_box);
         action_stack.append(&button_stack);
-        row.add_suffix(&action_stack);
+
+        let inner = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        inner.set_margin_start(12);
+        inner.set_margin_end(12);
+        inner.set_margin_top(10);
+        inner.set_margin_bottom(10);
+        inner.append(&icon);
+        inner.append(&text_box);
+        inner.append(&action_stack);
+
+        row.set_child(Some(&inner));
 
         {
             let tx = from_ui_tx.clone();
@@ -173,13 +206,14 @@ impl TransferRow {
             let cancel_btn_ref = cancel_btn.clone();
             let progress_bar_ref = progress_bar.clone();
             let pending_cancel_ref = pending_cancel.clone();
+            let subtitle_label_ref = subtitle_label.clone();
             cancel_btn.connect_clicked(move |_| {
                 log::info!("ui cancel requested for transfer_id={}", id2);
                 pending_cancel_ref.set(true);
                 cancel_btn_ref.set_sensitive(false);
                 row_ref.remove_css_class("transfer-active");
                 row_ref.add_css_class("transfer-error");
-                row_ref.set_subtitle(&tr!("Cancelling..."));
+                subtitle_label_ref.set_text(&tr!("Cancelling..."));
                 progress_bar_ref.set_visible(false);
                 if let Err(e) = tx.try_send(FromUi::Cancel(id2.clone())) {
                     log::warn!("Cancel send failed: {e}");
@@ -258,6 +292,8 @@ impl TransferRow {
         Self {
             row,
             icon,
+            title_label,
+            subtitle_label,
             risk_label,
             progress_bar,
             pin_label,
@@ -332,7 +368,7 @@ impl TransferRow {
         *self.copy_text.borrow_mut() = None;
 
         if let Some(source) = &meta.source {
-            self.row.set_title(&source.name);
+            self.title_label.set_text(&source.name);
             *self.last_title.borrow_mut() = source.name.clone();
             let icon_name = match &source.device_type {
                 DeviceType::Phone => "phone-symbolic",
@@ -352,7 +388,7 @@ impl TransferRow {
                 update_risk_badge(&self.risk_label, meta);
                 self.button_stack.set_spacing(4);
                 let desc = build_transfer_description(meta);
-                self.row.set_subtitle(&desc);
+                self.subtitle_label.set_text(&desc);
                 self.row
                     .set_tooltip_text(build_transfer_tooltip(meta).as_deref());
                 *self.last_subtitle.borrow_mut() = desc;
@@ -363,14 +399,14 @@ impl TransferRow {
                 if self.pending_cancel.get() {
                     self.row.add_css_class("transfer-error");
                     let subtitle = tr!("Cancelling transfer...");
-                    self.row.set_subtitle(&subtitle);
+                    self.subtitle_label.set_text(&subtitle);
                     *self.last_subtitle.borrow_mut() = subtitle;
                     self.cancel_btn.set_visible(true);
                     self.cancel_btn.set_sensitive(false);
                 } else {
                     self.row.add_css_class("transfer-active");
                     let subtitle = progress_subtitle(&tr!("Receiving"), meta);
-                    self.row.set_subtitle(&subtitle);
+                    self.subtitle_label.set_text(&subtitle);
                     *self.last_subtitle.borrow_mut() = subtitle;
                     self.progress_bar.set_visible(true);
                     self.cancel_btn.set_visible(true);
@@ -381,14 +417,14 @@ impl TransferRow {
                 if self.pending_cancel.get() {
                     self.row.add_css_class("transfer-error");
                     let subtitle = tr!("Cancelling transfer...");
-                    self.row.set_subtitle(&subtitle);
+                    self.subtitle_label.set_text(&subtitle);
                     *self.last_subtitle.borrow_mut() = subtitle;
                     self.cancel_btn.set_visible(true);
                     self.cancel_btn.set_sensitive(false);
                 } else {
                     self.row.add_css_class("transfer-active");
                     let subtitle = progress_subtitle(&tr!("Sending"), meta);
-                    self.row.set_subtitle(&subtitle);
+                    self.subtitle_label.set_text(&subtitle);
                     *self.last_subtitle.borrow_mut() = subtitle;
                     self.progress_bar.set_visible(true);
                     self.cancel_btn.set_visible(true);
@@ -407,14 +443,16 @@ impl TransferRow {
                 } else {
                     tr!("Received")
                 };
-                self.row.set_subtitle(&desc);
+                self.subtitle_label.set_text(&desc);
                 update_risk_badge(&self.risk_label, meta);
                 self.row
                     .set_tooltip_text(build_transfer_tooltip(meta).as_deref());
                 *self.last_subtitle.borrow_mut() = desc;
                 if let Some(path) = open_path {
                     *self.open_target.borrow_mut() = Some(path);
-                    self.open_btn.set_visible(true);
+                    let no_risk = matches!(meta.risk_level, TransferRiskLevel::None)
+                        && !meta.contains_dangerous_files;
+                    self.open_btn.set_visible(no_risk);
                     self.show_folder_btn.set_visible(true);
                 }
                 if meta.text_payload.is_some() {
@@ -426,7 +464,7 @@ impl TransferRow {
             State::Rejected => {
                 self.row.add_css_class("transfer-error");
                 let subtitle = tr!("Transfer rejected");
-                self.row.set_subtitle(&subtitle);
+                self.subtitle_label.set_text(&subtitle);
                 *self.last_subtitle.borrow_mut() = subtitle;
                 self.clear_btn.set_visible(true);
                 self.retry_btn.set_visible(meta.files.is_some());
@@ -434,7 +472,7 @@ impl TransferRow {
             State::Cancelled => {
                 self.row.add_css_class("transfer-error");
                 let subtitle = tr!("Transfer cancelled");
-                self.row.set_subtitle(&subtitle);
+                self.subtitle_label.set_text(&subtitle);
                 *self.last_subtitle.borrow_mut() = subtitle;
                 self.clear_btn.set_visible(true);
                 self.retry_btn.set_visible(meta.files.is_some());
@@ -442,13 +480,13 @@ impl TransferRow {
             State::Disconnected => {
                 self.row.add_css_class("transfer-error");
                 let subtitle = tr!("Connection lost during transfer");
-                self.row.set_subtitle(&subtitle);
+                self.subtitle_label.set_text(&subtitle);
                 *self.last_subtitle.borrow_mut() = subtitle;
                 self.clear_btn.set_visible(true);
                 self.retry_btn.set_visible(meta.files.is_some());
             }
             _ => {
-                self.row.set_subtitle("");
+                self.subtitle_label.set_text("");
                 self.last_subtitle.borrow_mut().clear();
             }
         }
@@ -547,9 +585,6 @@ fn build_transfer_tooltip(meta: &TransferMetadata) -> Option<String> {
             }
             if let Some(description) = &meta.detected_content_description {
                 lines.push(format!("{}: {description}", tr!("Detected type")));
-            }
-            if let Some(label) = &meta.detected_content_label {
-                lines.push(format!("Magika: {label}"));
             }
         }
         TransferRiskLevel::Extension => {

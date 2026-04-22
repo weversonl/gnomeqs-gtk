@@ -412,6 +412,12 @@ msgstr "PIN"
 msgid "GnomeQS wants to share"
 msgstr "GnomeQS quer compartilhar"
 
+msgid "wants to share"
+msgstr "quer compartilhar"
+
+msgid "A nearby device wants to share. Tap to become visible."
+msgstr "Um dispositivo próximo quer compartilhar. Toque para ficar visível."
+
 msgid "Wi-Fi Direct (experimental)"
 msgstr "Wi-Fi Direct (experimental)"
 

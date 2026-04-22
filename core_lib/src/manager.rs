@@ -66,9 +66,14 @@ impl TcpServer {
                 }
                 Some(i) = self.connect_receiver.recv() => {
                     info!("{INNER_NAME}: outbound request: id={} name={} addr={}", i.id, i.name, i.addr);
-                    if let Err(e) = self.connect(cctk, i).await {
-                        error!("{INNER_NAME}: error sending: {}", e.to_string());
-                    }
+                    let endpoint_id = self.endpoint_id;
+                    let sender = self.sender.clone();
+                    let cancel_sender = self.cancel_sender.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = connect(cctk, endpoint_id, sender, cancel_sender, i).await {
+                            error!("{INNER_NAME}: error sending: {}", e.to_string());
+                        }
+                    });
                 }
                 r = self.tcp_listener.accept() => {
                     match r {
@@ -132,68 +137,79 @@ impl TcpServer {
         Ok(())
     }
 
-    pub async fn connect(&self, ctk: CancellationToken, si: SendInfo) -> Result<(), anyhow::Error> {
-        debug!("{INNER_NAME}: Connecting to: {}", si.addr);
-        let socket = TcpStream::connect(si.addr.clone()).await?;
+}
 
-        let mut or = OutboundRequest::new(
-            self.endpoint_id,
-            socket,
-            si.id,
-            self.sender.clone(),
-            self.cancel_sender.subscribe(),
-            si.ob,
-            RemoteDeviceInfo {
-                device_type: si.device_type,
-                name: si.name,
+async fn connect(
+    ctk: CancellationToken,
+    endpoint_id: [u8; 4],
+    sender: Sender<ChannelMessage>,
+    cancel_sender: Sender<String>,
+    si: SendInfo,
+) -> Result<(), anyhow::Error> {
+    debug!("{INNER_NAME}: Connecting to: {}", si.addr);
+    let socket = TcpStream::connect(si.addr.clone()).await?;
+
+    let mut or = OutboundRequest::new(
+        endpoint_id,
+        socket,
+        si.id,
+        sender.clone(),
+        cancel_sender.subscribe(),
+        si.ob,
+        RemoteDeviceInfo {
+            device_type: si.device_type,
+            name: si.name,
+        },
+    );
+
+    or.send_connection_request().await?;
+    or.send_ukey2_client_init().await?;
+
+    loop {
+        tokio::select! {
+            _ = ctk.cancelled() => {
+                info!("{INNER_NAME}: tracker cancelled, breaking");
+                break;
             },
-        );
-
-        or.send_connection_request().await?;
-        or.send_ukey2_client_init().await?;
-
-        loop {
-            tokio::select! {
-                _ = ctk.cancelled() => {
-                    info!("{INNER_NAME}: tracker cancelled, breaking");
-                    break;
-                },
-                r = or.handle() => {
-                    if let Err(e) = r {
-                        match e.downcast_ref() {
-                            Some(AppError::NotAnError) => break,
-                            None => {
-                                if or.state.state == State::Initial {
-                                    break;
-                                }
-
-                                if or.state.state != State::Finished && or.state.state != State::Cancelled {
-                                    let _ = self.sender.clone().send(ChannelMessage {
-                                        id: or.state.id.clone(),
-                                        direction: ChannelDirection::LibToFront,
-                                        rtype: Some(TransferType::Outbound),
-                                        state: Some(State::Disconnected),
-                                        meta: or.state.transfer_metadata.clone(),
-                                        ..Default::default()
-                                    });
-                                }
-                                error!("{INNER_NAME}: error while handling client: {e} ({:?})", or.state.state);
+            r = or.handle() => {
+                if let Err(e) = r {
+                    match e.downcast_ref() {
+                        Some(AppError::NotAnError) => break,
+                        None => {
+                            if or.state.state == State::Initial {
                                 break;
                             }
+
+                            if or.state.state != State::Finished && or.state.state != State::Cancelled {
+                                let _ = sender.send(ChannelMessage {
+                                    id: or.state.id.clone(),
+                                    direction: ChannelDirection::LibToFront,
+                                    rtype: Some(TransferType::Outbound),
+                                    state: Some(State::Disconnected),
+                                    meta: or.state.transfer_metadata.clone(),
+                                    ..Default::default()
+                                });
+                            }
+                            error!("{INNER_NAME}: error while handling client: {e} ({:?})", or.state.state);
+                            break;
                         }
                     }
                 }
             }
         }
-
-        Ok(())
     }
+
+    Ok(())
 }
 
 async fn schedule_mdns_resend(sender: broadcast::Sender<()>) {
+    // Three staggered re-announcements so Samsung's browse window catches at least one.
+    // Each register() call also auto-schedules a second announcement at +1 s (RFC 6762 §8.3),
+    // giving ~6 multicast packets total over a 7 s window.
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     let _ = sender.send(());
-    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
     let _ = sender.send(());
-    tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+    tokio::time::sleep(std::time::Duration::from_millis(4000)).await;
     let _ = sender.send(());
 }

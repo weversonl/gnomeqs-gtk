@@ -37,6 +37,7 @@ pub struct MDnsServer {
     daemon: ServiceDaemon,
     service_info: ServiceInfo,
     ble_receiver: Receiver<()>,
+    reset_receiver: Receiver<()>,
     visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     visibility_receiver: watch::Receiver<Visibility>,
 }
@@ -46,6 +47,7 @@ impl MDnsServer {
         endpoint_id: [u8; 4],
         service_port: u16,
         ble_receiver: Receiver<()>,
+        reset_receiver: Receiver<()>,
         visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
         visibility_receiver: watch::Receiver<Visibility>,
     ) -> Result<Self, anyhow::Error> {
@@ -55,6 +57,7 @@ impl MDnsServer {
             daemon: ServiceDaemon::new()?,
             service_info,
             ble_receiver,
+            reset_receiver,
             visibility_sender,
             visibility_receiver,
         })
@@ -64,6 +67,7 @@ impl MDnsServer {
         info!("{INNER_NAME}: service starting");
         let monitor = self.daemon.monitor()?;
         let ble_receiver = &mut self.ble_receiver;
+        let reset_receiver = &mut self.reset_receiver;
         let mut visibility = *self.visibility_receiver.borrow();
         let mut temporary_visibility_interval =
             interval_at(Instant::now() + TICK_INTERVAL, TICK_INTERVAL);
@@ -135,6 +139,19 @@ impl MDnsServer {
                         self.daemon.register(self.service_info.clone())?;
                         registered = true;
                     }
+                },
+                _ = reset_receiver.recv() => {
+                    if visibility == Visibility::Invisible {
+                        continue;
+                    }
+
+                    // Re-announce without sending a goodbye first. mdns-sd supports calling
+                    // register() again on an already-registered service to re-broadcast it.
+                    // Staying registered means Samsung's browse query always gets a response,
+                    // even if it fires immediately after the transfer.
+                    debug!("{INNER_NAME}: post-transfer reset: re-announcing service");
+                    self.daemon.register(self.service_info.clone())?;
+                    registered = true;
                 },
                 _ = temporary_visibility_interval.tick() => {
                     if visibility != Visibility::Temporarily {
