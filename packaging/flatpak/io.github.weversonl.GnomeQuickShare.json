@@ -9,7 +9,8 @@
   "build-options": {
     "append-path": "/usr/lib/sdk/rust-stable/bin",
     "env": {
-      "CARGO_NET_OFFLINE": "true"
+      "CARGO_NET_OFFLINE": "true",
+      "ORT_LIB_LOCATION": "/run/build/gnome-quick-share/packaging/flatpak/onnxruntime"
     }
   },
   "command": "gnomeqs",
@@ -28,6 +29,7 @@
       "name": "gnome-quick-share",
       "buildsystem": "simple",
       "build-commands": [
+        "python3 -c \"import lzma, tarfile; filters = [{'id': lzma.FILTER_LZMA2, 'dict_size': 1 << 26}]; stream = lzma.LZMAFile('ort-x86_64-unknown-linux-gnu.tar.lzma2', 'rb', format=lzma.FORMAT_RAW, filters=filters); tarfile.open(fileobj=stream, mode='r|').extractall('packaging/flatpak/onnxruntime')\"",
         "install -Dm644 cargo/config .cargo/config.toml",
         "meson setup --prefix=/app --buildtype=release -Dtray=false _build",
         "ninja -j $FLATPAK_BUILDER_N_JOBS -C _build",
@@ -37,7 +39,13 @@
         {
           "type": "git",
           "url": "https://github.com/weversonl/gnome-quick-share.git",
-          "commit": "cabb049ba76905b1e80b523a40091a039c2877e7"
+          "commit": "563c91da07e33a16018fe0244304df6e17942802"
+        },
+        {
+          "type": "file",
+          "url": "https://cdn.pyke.io/0/pyke:ort-rs/ms@1.23.2/x86_64-unknown-linux-gnu.tar.lzma2",
+          "sha256": "8c57d059aaaee407812a5698d6706c79e090ad69e1a14204309e802dcbbaa35f",
+          "dest-filename": "ort-x86_64-unknown-linux-gnu.tar.lzma2"
         },
         "cargo-sources.json"
       ]

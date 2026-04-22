@@ -15,6 +15,7 @@ cleanup() {
 trap cleanup EXIT
 
 rm -rf "$source_dir" "$build_dir" "$repo_dir" "$bundle"
+mkdir -p "$(dirname "$source_dir")"
 
 rsync -a --delete \
   --exclude '.git/' \
