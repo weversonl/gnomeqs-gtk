@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f0f1a" id="meta-theme-color" />
+  <title>GnomeQS — Quick Share for Linux</title>
+  <meta name="description" content="GNOME-native file sharing for Linux. Transfer files and text between nearby devices wirelessly." />
+  <link rel="icon" type="image/png" href="assets/icon.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header" id="header">
+    <div class="header-inner container">
+      <a class="logo" href="#">
+        <img src="assets/icon.png" alt="GnomeQS icon" width="32" height="32" />
+        <span class="logo-name">GnomeQS</span>
+      </a>
+      <div class="header-actions">
+        <button class="btn-icon" id="theme-toggle" aria-label="Toggle theme">
+          <span class="icon-sun">☀</span>
+          <span class="icon-moon">🌙</span>
+        </button>
+        <button class="btn-lang" id="lang-toggle" aria-label="Toggle language">
+          <span id="lang-label">PT</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container hero-content animate fade-up">
+      <div class="hero-badge" data-i18n="hero_badge">Open Source · AGPL-3.0</div>
+      <h1 class="hero-title">
+        <span data-i18n="hero_title_1">Share files on Linux,</span><br />
+        <span class="gradient-text" data-i18n="hero_title_2">the GNOME way.</span>
+      </h1>
+      <p class="hero-sub" data-i18n="hero_sub">Transfer files and text to nearby devices wirelessly. Native GTK4 interface, zero cloud dependency.</p>
+      <div class="hero-ctas">
+        <a href="#install" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span data-i18n="btn_download">Download</span>
+        </a>
+        <a href="https://github.com/weversonl/gnome-quick-share/releases" class="btn btn-secondary" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span data-i18n="btn_releases">All releases</span>
+        </a>
+        <a href="https://github.com/weversonl/gnome-quick-share" class="btn btn-ghost" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+      <p class="hero-version" id="hero-version">v1.4.0</p>
+    </div>
+    <div class="hero-scroll-hint">
+      <span class="scroll-arrow">↓</span>
+    </div>
+  </section>
+
+  <!-- SCREENSHOTS -->
+  <section class="screenshots section" id="screenshots">
+    <div class="container">
+      <h2 class="section-title animate fade-up" data-i18n="screenshots_title">See it in action</h2>
+      <div class="screenshots-grid">
+        <div class="screenshot-wrap animate slide-left">
+          <div class="window-chrome">
+            <div class="window-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="window-title" data-i18n="ss1_title">GnomeQS</span>
+          </div>
+          <img src="assets/screenshot-1.png" alt="GnomeQS main window — ready to receive" loading="lazy" />
+        </div>
+        <div class="screenshot-wrap animate slide-right">
+          <div class="window-chrome">
+            <div class="window-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="window-title" data-i18n="ss2_title">Send files</span>
+          </div>
+          <img src="assets/screenshot-2.png" alt="GnomeQS send files window" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features section" id="features">
+    <div class="container">
+      <h2 class="section-title animate fade-up" data-i18n="features_title">Why GnomeQS?</h2>
+      <div class="features-grid">
+        <div class="feature-card animate fade-up" style="--delay: 0ms">
+          <div class="feature-icon">📡</div>
+          <h3 data-i18n="feat1_title">mDNS Discovery</h3>
+          <p data-i18n="feat1_desc">Automatically finds nearby devices on your network. No pairing, no accounts.</p>
+        </div>
+        <div class="feature-card animate fade-up" style="--delay: 100ms">
+          <div class="feature-icon">📁</div>
+          <h3 data-i18n="feat2_title">Files &amp; Text</h3>
+          <p data-i18n="feat2_desc">Send any file or plain text snippets to nearby devices instantly.</p>
+        </div>
+        <div class="feature-card animate fade-up" style="--delay: 200ms">
+          <div class="feature-icon">🖥</div>
+          <h3 data-i18n="feat3_title">GNOME Native</h3>
+          <p data-i18n="feat3_desc">Built with GTK4 and libadwaita. Feels at home on your GNOME desktop.</p>
+        </div>
+        <div class="feature-card animate fade-up" style="--delay: 300ms">
+          <div class="feature-icon">📦</div>
+          <h3 data-i18n="feat4_title">Multiple Packages</h3>
+          <p data-i18n="feat4_desc">Available as Flatpak, AUR, Debian, and RPM packages.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section class="install section" id="install">
+    <div class="container">
+      <h2 class="section-title animate fade-up" data-i18n="install_title">Installation</h2>
+      <div class="tabs animate fade-up">
+        <div class="tab-buttons" role="tablist">
+          <button class="tab-btn active" role="tab" data-tab="flatpak">Flatpak</button>
+          <button class="tab-btn" role="tab" data-tab="aur">AUR</button>
+          <button class="tab-btn" role="tab" data-tab="deb">Debian</button>
+          <button class="tab-btn" role="tab" data-tab="rpm">RPM</button>
+          <button class="tab-btn" role="tab" data-tab="appimage">AppImage</button>
+        </div>
+        <div class="tab-panels">
+          <div class="tab-panel active" id="tab-flatpak">
+            <div class="code-block">
+              <code>curl -LO https://github.com/weversonl/gnome-quick-share/releases/latest/download/gnome-quick-share-latest.flatpak &amp;&amp; flatpak install --bundle gnome-quick-share-latest.flatpak</code>
+              <button class="copy-btn" aria-label="Copy command"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-aur">
+            <div class="code-block">
+              <code>yay -S gnome-quick-share</code>
+              <button class="copy-btn" aria-label="Copy command"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-deb">
+            <div class="code-block">
+              <code>curl -LO https://github.com/weversonl/gnome-quick-share/releases/latest/download/gnome-quick-share-latest-amd64.deb &amp;&amp; sudo dpkg -i gnome-quick-share-latest-amd64.deb</code>
+              <button class="copy-btn" aria-label="Copy command"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-rpm">
+            <div class="code-block">
+              <code>curl -LO https://github.com/weversonl/gnome-quick-share/releases/latest/download/gnome-quick-share-latest.amd64.rpm &amp;&amp; sudo rpm -i gnome-quick-share-latest.amd64.rpm</code>
+              <button class="copy-btn" aria-label="Copy command"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
+          </div>
+          <div class="tab-panel" id="tab-appimage">
+            <div class="code-block">
+              <code>curl -LO https://github.com/weversonl/gnome-quick-share/releases/latest/download/gnome-quick-share-latest-amd64.AppImage &amp;&amp; chmod +x gnome-quick-share-latest-amd64.AppImage &amp;&amp; ./gnome-quick-share-latest-amd64.AppImage</code>
+              <button class="copy-btn" aria-label="Copy command"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="install-note animate fade-up">
+        <a href="https://github.com/weversonl/gnome-quick-share/releases" target="_blank" rel="noopener" data-i18n="install_releases">See all releases on GitHub →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <img src="assets/icon.png" alt="GnomeQS" width="24" height="24" />
+        <span>GnomeQS <span id="footer-version">v1.4.0</span></span>
+        <span class="footer-sep">·</span>
+        <span>AGPL-3.0</span>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/weversonl/gnome-quick-share" target="_blank" rel="noopener" data-i18n="footer_github">GitHub</a>
+        <a href="https://github.com/weversonl/gnome-quick-share/issues" target="_blank" rel="noopener" data-i18n="footer_issues">Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

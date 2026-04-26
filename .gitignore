@@ -1,5 +1,8 @@
 target/
-docs/
+
+# docs/ is committed for GitHub Pages — only ignore AI context files
+docs/[0-9][0-9]-*.md
+docs/README.md
 CLAUDE.md
 CLAUDE*
 claude.md
@@ -45,6 +48,15 @@ gen
 .flatpak-builder/
 packaging/flatpak/vendor/
 packaging/out/
+
+# AppImage build artifacts
+packaging/appimage/AppDir/
+packaging/appimage/build/
+packaging/appimage/*.AppImage
+packaging/appimage/*.AppImage.zsync
+
+# Release output
+dist/
 aur/pkg/
 aur/src/
 aur/*.pkg.tar.zst

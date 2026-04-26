@@ -21,7 +21,8 @@ pub fn init(language: Option<&str>) {
 
     let _ = gettextrs::setlocale(LocaleCategory::LcMessages, "");
 
-    if let Err(e) = bindtextdomain(GETTEXT_PACKAGE, LOCALE_DIR) {
+    let locale_dir = std::env::var("GNOMEQS_LOCALE_DIR").unwrap_or_else(|_| LOCALE_DIR.to_string());
+    if let Err(e) = bindtextdomain(GETTEXT_PACKAGE, &locale_dir) {
         log::warn!("Could not bind gettext domain to {}: {e}", LOCALE_DIR);
         return;
     }
